@@ -1,11 +1,9 @@
 import 'package:bli_flutter_recipewhisper/features/auth/presentation/screens/profile_screen.dart';
+import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bli_flutter_recipewhisper/features/auth/presentation/providers/auth_provider.dart';
-
-// ✅ Import the real ProfileScreen
-import 'package:bli_flutter_recipewhisper/core/widgets/bottom_nav_bar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -17,12 +15,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
 
-  // ✅ Use the real ProfileScreen here
-  final List<Widget> _screens = [
+  List<Widget> get _screens => [
     const HomeContent(),
     const RecipesScreen(),
     const AiScreen(),
-    ProfileScreen(), // real screen with working toggles
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -41,11 +38,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         selectedItemColor: const Color(0xFFFF6B6B),
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Text('🏠', style: TextStyle(fontSize: 24)), label: 'Home'),
-          BottomNavigationBarItem(icon: Text('📖', style: TextStyle(fontSize: 24)), label: 'Recipes'),
-          BottomNavigationBarItem(icon: Text('✨', style: TextStyle(fontSize: 24)), label: 'AI'),
-          BottomNavigationBarItem(icon: Text('👤', style: TextStyle(fontSize: 24)), label: 'Profile'),
+        items: [
+          BottomNavigationBarItem(
+            icon: const Text('🏠', style: TextStyle(fontSize: 24)),
+            label: context.tr('home'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Text('📖', style: TextStyle(fontSize: 24)),
+            label: context.tr('recipes'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Text('✨', style: TextStyle(fontSize: 24)),
+            label: context.tr('ai'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Text('👤', style: TextStyle(fontSize: 24)),
+            label: context.tr('profile'),
+          ),
         ],
       ),
     );
@@ -56,6 +65,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 class HomeContent extends ConsumerWidget {
   const HomeContent({super.key});
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'good_morning';
+    if (hour < 17) return 'good_afternoon';
+    return 'good_evening';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -77,19 +93,19 @@ class HomeContent extends ConsumerWidget {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    'Good Morning! 👋',
-                    style: TextStyle(
+                    context.tr(_getGreeting()),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
-                    'What would you like to cook today?',
-                    style: TextStyle(
+                    context.tr('what_to_cook'),
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
                     ),
@@ -113,7 +129,7 @@ class HomeContent extends ConsumerWidget {
           child: TextField(
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              hintText: 'Search recipes...',
+              hintText: context.tr('search_recipes'),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -125,11 +141,11 @@ class HomeContent extends ConsumerWidget {
         ),
 
         // Section title
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Text(
-            'Popular Recipes',
-            style: TextStyle(
+            context.tr('popular_recipes'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -141,7 +157,7 @@ class HomeContent extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
-              _recipeCard('Spicy Thai Basil Chicken', '🍗'),
+              _recipeCard('Spicy Thai Basil Chicken', '🗡'),
               _recipeCard('Avocado Toast', '🥑'),
               _recipeCard('Chocolate Cake', '🍰'),
             ],
@@ -173,20 +189,30 @@ class HomeContent extends ConsumerWidget {
   }
 }
 
-class RecipesScreen extends StatelessWidget {
+class RecipesScreen extends ConsumerWidget {
   const RecipesScreen({super.key});
+  
   @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Recipes Screen'));
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Text(
+        '${context.tr('recipes')} Screen',
+        style: const TextStyle(fontSize: 20),
+      ),
+    );
   }
 }
 
-class AiScreen extends StatelessWidget {
+class AiScreen extends ConsumerWidget {
   const AiScreen({super.key});
+  
   @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('AI Screen'));
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Text(
+        '${context.tr('ai')} Screen',
+        style: const TextStyle(fontSize: 20),
+      ),
+    );
   }
 }
-
-// ✅ Remove the local ProfileScreen stub completely

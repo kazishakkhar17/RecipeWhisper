@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
+import '../constants/locales.dart';
 
 final localeProvider =
     StateNotifierProvider<LocaleNotifier, Locale>((ref) {
@@ -22,10 +23,21 @@ class LocaleNotifier extends StateNotifier<Locale> {
 
   void toggleLocale() {
     if (state.languageCode == 'en') {
-      state = const Locale('bn');
+      setLocale(AppLocales.bangla);
     } else {
-      state = const Locale('en');
+      setLocale(AppLocales.english);
     }
-    prefs.setString(_localeKey, state.languageCode);
   }
+
+  void setLocale(Locale locale) {
+    state = locale;
+    prefs.setString(_localeKey, locale.languageCode);
+  }
+
+  String get currentLanguageName {
+    return state.languageCode == 'en' ? 'English' : 'বাংলা';
+  }
+
+  bool get isEnglish => state.languageCode == 'en';
+  bool get isBangla => state.languageCode == 'bn';
 }

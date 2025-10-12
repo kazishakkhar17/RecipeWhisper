@@ -1,4 +1,4 @@
-import 'package:bli_flutter_recipewhisper/core/services/localizatiion_service.dart';
+import 'package:bli_flutter_recipewhisper/core/services/localization_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
