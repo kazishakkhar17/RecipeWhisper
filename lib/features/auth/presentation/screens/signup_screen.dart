@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import 'package:bli_flutter_recipewhisper/core/widgets/app_button.dart';
 import 'package:bli_flutter_recipewhisper/core/widgets/app_text_field.dart';
+import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -73,7 +74,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                 // Subtitle
                 Text(
-                  "Join Recipe Whisper today",
+                  "Join ${context.tr('app_name')} today",
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onBackground.withOpacity(0.7),
                   ),
@@ -98,17 +99,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     children: [
                       AppTextField(
                         controller: emailController,
-                        hintText: 'Email',
+                        hintText: context.tr('email'),
                       ),
                       const SizedBox(height: 16),
                       AppTextField(
                         controller: passwordController,
-                        hintText: 'Password',
+                        hintText: context.tr('password'),
                         obscureText: true,
                       ),
                       const SizedBox(height: 24),
                       AppButton(
-                        text: 'Signup',
+                        text: context.tr('signup'),
                         onPressed: () async {
                           try {
                             await ref
@@ -125,14 +126,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content:
-                                            Text('Signup failed: $error'),
+                                            Text('${context.tr('signup_failed')}: $error'),
                                       ),
                                     );
                                   },
                                 );
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Signup error: $e')),
+                              SnackBar(content: Text('${context.tr('signup_failed')}: $e')),
                             );
                           }
                         },
@@ -143,7 +144,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           GoRouter.of(context).go('/login');
                         },
                         child: Text(
-                          'Already have an account? Login',
+                          context.tr('already_have_account'),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),

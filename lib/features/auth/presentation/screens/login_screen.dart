@@ -1,5 +1,6 @@
 import 'package:bli_flutter_recipewhisper/core/widgets/app_button.dart';
 import 'package:bli_flutter_recipewhisper/core/widgets/app_text_field.dart';
+import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -63,7 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // Title
                 Text(
-                  "Recipe Whisper",
+                  context.tr('app_name'),
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onBackground,
@@ -98,17 +99,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       AppTextField(
                         controller: emailController,
-                        hintText: 'Email',
+                        hintText: context.tr('email'),
                       ),
                       const SizedBox(height: 16),
                       AppTextField(
                         controller: passwordController,
-                        hintText: 'Password',
+                        hintText: context.tr('password'),
                         obscureText: true,
                       ),
                       const SizedBox(height: 24),
                       AppButton(
-                        text: 'Login',
+                        text: context.tr('login'),
                         onPressed: () async {
                           await ref
                               .read(authStateProvider.notifier)
@@ -123,7 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             error: (error, _) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Login failed: $error'),
+                                  content: Text('${context.tr('login_failed')}: $error'),
                                 ),
                               );
                             },
@@ -133,19 +134,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () async {
+                          if (emailController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(context.tr('enter_email_first')),
+                              ),
+                            );
+                            return;
+                          }
                           await ref
                               .read(authStateProvider.notifier)
                               .resetPassword(
                                 emailController.text.trim(),
                               );
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Password reset email sent'),
+                            SnackBar(
+                              content: Text(context.tr('password_reset_sent')),
                             ),
                           );
                         },
                         child: Text(
-                          'Forgot Password?',
+                          context.tr('forgot_password'),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: colorScheme.primary,
                             fontWeight: FontWeight.w500,
@@ -157,7 +166,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           GoRouter.of(context).go('/signup');
                         },
                         child: Text(
-                          "Don't have an account? Signup",
+                          context.tr('dont_have_account'),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),
