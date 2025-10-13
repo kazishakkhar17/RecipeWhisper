@@ -1,5 +1,6 @@
 import 'package:bli_flutter_recipewhisper/features/auth/presentation/screens/profile_screen.dart';
 import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
+import 'package:bli_flutter_recipewhisper/features/reminders/presentation/screens/reminder_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const RecipesScreen(),
     const AiScreen(),
     const ProfileScreen(),
+    const ReminderScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -58,6 +60,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: const Text('👤', style: TextStyle(fontSize: 24)),
             label: context.tr('profile'),
           ),
+          BottomNavigationBarItem(
+  icon: const Text('⏰', style: TextStyle(fontSize: 24)),
+  label: context.tr('reminders'),
+),
+
         ],
       ),
     );
