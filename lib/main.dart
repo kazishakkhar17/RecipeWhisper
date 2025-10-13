@@ -9,9 +9,12 @@ import 'injection_container.dart' as di;
 
 // Aliases to prevent duplicate imports
 import 'features/auth/data/datasources/firebase_auth_datasource.dart' as ds;
-import 'features/auth/data/repositories/auth_repository_impl.dart'; // no alias needed
+import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'core/services/firebase_auth_service.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+
+// Import Recipe entity for Hive adapter
+import 'features/recipes/domain/entities/recipe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +24,12 @@ void main() async {
   );
 
   await Hive.initFlutter();
-  await Hive.openBox('recipesBox');
+  
+  // Register Recipe adapter
+  Hive.registerAdapter(RecipeAdapter());
+  
+  // Open boxes (recipesBox as typed box for Recipe)
+  await Hive.openBox<Recipe>('recipesBox');
   await Hive.openBox('nutritionBox');
 
   final prefs = await SharedPreferences.getInstance();
@@ -32,7 +40,7 @@ void main() async {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         authRepositoryProvider.overrideWithValue(
-          AuthRepositoryImpl( // just use the class directly, no alias
+          AuthRepositoryImpl(
             ds.FirebaseAuthDataSource(FirebaseAuthService()),
           ),
         ),

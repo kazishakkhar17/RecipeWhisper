@@ -49,14 +49,26 @@ class AppStrings {
     
     // Recipe
     'add_recipe': 'Add Recipe',
+    'edit_recipe': 'Edit Recipe',
     'recipe_name': 'Recipe Name',
+    'recipe_description': 'Description',
     'ingredients': 'Ingredients',
     'instructions': 'Instructions',
     'cooking_time': 'Cooking Time',
     'servings': 'Servings',
+    'category': 'Category',
+    'minutes': 'minutes',
     'recipe_added': 'Recipe added successfully',
     'recipe_deleted': 'Recipe deleted',
     'recipe_updated': 'Recipe updated',
+    'no_recipes': 'No recipes found',
+    'add_your_first': 'Add your first recipe!',
+    'recipe_details': 'Recipe Details',
+    'add_ingredient': 'Add Ingredient',
+    'add_instruction': 'Add Instruction',
+    'enter_ingredient': 'Enter ingredient',
+    'enter_instruction': 'Enter instruction',
+    'step': 'Step',
     
     // AI
     'ai_suggestions': 'AI Suggestions',
