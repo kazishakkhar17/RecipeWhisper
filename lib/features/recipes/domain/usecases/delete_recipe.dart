@@ -1,3 +1,5 @@
+import 'package:bli_flutter_recipewhisper/features/recipes/domain/repositories/recipe_repository.dart';
+
 class DeleteRecipe {
   final RecipeRepository repository;
 

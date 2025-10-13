@@ -8,8 +8,15 @@ class HiveRecipeDataSource {
 
   // Get all recipes
   Future<List<Recipe>> getAllRecipes() async {
-    return _box.values.toList();
-  }
+  print('📖 Getting all recipes...');
+  print('📊 Box length: ${_box.length}');
+  print('🔍 Box keys: ${_box.keys.toList()}');
+  
+  final recipes = _box.values.toList();
+  print('✅ Retrieved ${recipes.length} recipes');
+  
+  return recipes;
+}
 
   // Get recipe by ID
   Future<Recipe?> getRecipeById(String id) async {
@@ -21,8 +28,15 @@ class HiveRecipeDataSource {
 
   // Add recipe
   Future<void> addRecipe(Recipe recipe) async {
-    await _box.put(recipe.id, recipe);
-  }
+  print('📝 Adding recipe: ${recipe.name}');
+  print('📦 Box is open: ${_box.isOpen}');
+  print('📊 Current box length: ${_box.length}');
+  
+  await _box.put(recipe.id, recipe);
+  
+  print('✅ Recipe added! New box length: ${_box.length}');
+  print('🔍 All keys in box: ${_box.keys.toList()}');
+}
 
   // Update recipe
   Future<void> updateRecipe(Recipe recipe) async {
