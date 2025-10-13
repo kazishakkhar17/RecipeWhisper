@@ -87,6 +87,21 @@ class AppStrings {
     'set_reminder': 'Set Reminder',
     'reminder_time': 'Reminder Time',
     'reminder_set': 'Reminder set successfully',
+
+        //cooking timer
+'no_recipe': 'No Recipe',
+'no_active_timer': 'No active timer',
+'cooking': 'Cooking',
+'done': '✅ Done!',
+'pause': 'Pause',
+'resume': 'Resume',
+'finish': 'Finish',
+'stage_just_started': '🔥 Just started...',
+'stage_heating_up': '🍳 Heating up...',
+'stage_cooking_nicely': '🥘 Cooking nicely...',
+'stage_getting_close': '⏳ We are getting close...',
+'stage_almost_done': '🍲 Almost done...',
+'stage_ready_soon': '🍽 Ready soon...',
   };
 
   // Bangla Strings
@@ -165,6 +180,26 @@ class AppStrings {
     'set_reminder': 'রিমাইন্ডার সেট করুন',
     'reminder_time': 'রিমাইন্ডার সময়',
     'reminder_set': 'রিমাইন্ডার সফলভাবে সেট করা হয়েছে',
+
+    //Cooking timer
+
+
+
+// Bangla
+'no_recipe': 'কোনো রেসিপি নেই',
+'no_active_timer': 'কোনো চলমান টাইমার নেই',
+'cooking': 'রান্না চলছে',
+'done': '✅ সম্পন্ন!',
+'pause': 'বিরতি',
+'resume': 'পুনরায় শুরু',
+'finish': 'শেষ',
+'stage_just_started': '🔥 শুরু হয়েছে...',
+'stage_heating_up': '🍳 গরম হচ্ছে...',
+'stage_cooking_nicely': '🥘 সুন্দরভাবে রান্না হচ্ছে...',
+'stage_getting_close': '⏳ প্রায় শেষ...',
+'stage_almost_done': '🍲 প্রায় সম্পন্ন...',
+'stage_ready_soon': '🍽 শীঘ্রই প্রস্তুত...',
+
   };
 
   static Map<String, String> getStrings(String languageCode) {
