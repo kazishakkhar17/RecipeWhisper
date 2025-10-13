@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bli_flutter_recipewhisper/features/auth/presentation/providers/auth_provider.dart';
+import '../providers/recipe_provider.dart';
+import '../widgets/recipe_card.dart';
+import 'add_recipe_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -75,6 +78,8 @@ class HomeContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final recipesAsync = ref.watch(recipeListProvider);
+    
     return Column(
       children: [
         // Top gradient bar with greeting
@@ -127,6 +132,9 @@ class HomeContent extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           child: TextField(
+            onChanged: (value) {
+              ref.read(recipeSearchProvider.notifier).state = value;
+            },
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
               hintText: context.tr('search_recipes'),
@@ -143,48 +151,81 @@ class HomeContent extends ConsumerWidget {
         // Section title
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Text(
-            context.tr('popular_recipes'),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-
-        // Recipe cards list
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _recipeCard('Spicy Thai Basil Chicken', '🗡'),
-              _recipeCard('Avocado Toast', '🥑'),
-              _recipeCard('Chocolate Cake', '🍰'),
+              Text(
+                context.tr('popular_recipes'),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              recipesAsync.when(
+                data: (recipes) => Text(
+                  '${recipes.length}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
             ],
           ),
         ),
-      ],
-    );
-  }
 
-  Widget _recipeCard(String title, String emoji) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-        ],
-      ),
-      child: ListTile(
-        leading: Text(emoji, style: const TextStyle(fontSize: 36)),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        // Recipe list
+        Expanded(
+          child: recipesAsync.when(
+            data: (recipes) {
+              final searchQuery = ref.watch(recipeSearchProvider);
+              final filteredRecipes = searchQuery.isEmpty
+                  ? recipes
+                  : recipes.where((recipe) {
+                      final query = searchQuery.toLowerCase();
+                      return recipe.name.toLowerCase().contains(query) ||
+                             recipe.description.toLowerCase().contains(query) ||
+                             recipe.category.toLowerCase().contains(query);
+                    }).toList();
+
+              if (filteredRecipes.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.restaurant, size: 80, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(
+                        context.tr('no_recipes'),
+                        style: const TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        context.tr('add_your_first'),
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: filteredRecipes.length,
+                itemBuilder: (context, index) {
+                  return RecipeCard(recipe: filteredRecipes[index]);
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Text('Error: $error'),
+            ),
+          ),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      ),
+      ],
     );
   }
 }
@@ -194,10 +235,75 @@ class RecipesScreen extends ConsumerWidget {
   
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Text(
-        '${context.tr('recipes')} Screen',
-        style: const TextStyle(fontSize: 20),
+    final recipesAsync = ref.watch(filteredRecipesProvider);
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(context.tr('recipes')),
+        automaticallyImplyLeading: false,
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              onChanged: (value) {
+                ref.read(recipeSearchProvider.notifier).state = value;
+              },
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: context.tr('search_recipes'),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+          ),
+          
+          // Recipe list
+          Expanded(
+            child: recipesAsync.when(
+              data: (recipes) {
+                if (recipes.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.restaurant, size: 80, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        Text(
+                          context.tr('no_recipes'),
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: recipes.length,
+                  itemBuilder: (context, index) {
+                    return RecipeCard(recipe: recipes[index]);
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Error: $error')),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AddRecipeScreen(),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
