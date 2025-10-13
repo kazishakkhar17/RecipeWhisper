@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 import '../../domain/entities/recipe.dart';
 import '../providers/recipe_provider.dart';
+import '../providers/cooking_timer_provider.dart'; // ✅ NEW import
 import 'add_recipe_screen.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
@@ -17,7 +18,6 @@ class RecipeDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(recipe.name),
         actions: [
-          // Edit button
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
@@ -28,7 +28,6 @@ class RecipeDetailScreen extends ConsumerWidget {
               );
             },
           ),
-          // Delete button
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
@@ -64,7 +63,6 @@ class RecipeDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Recipe header card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -116,8 +114,6 @@ class RecipeDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Ingredients section
           Text(
             context.tr('ingredients'),
             style: const TextStyle(
@@ -142,7 +138,6 @@ class RecipeDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: recipe.ingredients.asMap().entries.map((entry) {
-                final index = entry.key;
                 final ingredient = entry.value;
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -171,8 +166,6 @@ class RecipeDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Instructions section
           Text(
             context.tr('instructions'),
             style: const TextStyle(
@@ -233,6 +226,48 @@ class RecipeDetailScreen extends ConsumerWidget {
           }).toList(),
         ],
       ),
+
+      // ✨ NEW: Start Cooking button at bottom
+bottomNavigationBar: Padding(
+  padding: const EdgeInsets.all(16),
+  child: SizedBox(
+    width: double.infinity,
+    child: Consumer(
+      builder: (context, ref, _) {
+        final timerState = ref.watch(cookingTimerProvider);
+        final timerNotifier = ref.read(cookingTimerProvider.notifier);
+        final isRunningForThisRecipe =
+            timerNotifier.currentRecipe?.id == recipe.id && timerState.isRunning;
+
+        return ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            backgroundColor: const Color(0xFFFF6B6B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: const Icon(Icons.local_fire_department, color: Colors.white),
+          label: Text(
+            isRunningForThisRecipe
+                ? context.tr('resume_cooking') // dynamic label
+                : context.tr('start_cooking'),
+            style: const TextStyle(color: Colors.white, fontSize: 18),
+          ),
+          onPressed: () {
+            if (!isRunningForThisRecipe) {
+              // Start timer if not already running
+              timerNotifier.startTimer(recipe);
+            }
+            // Navigate to timer screen
+            context.push('/cooking-timer');
+          },
+        );
+      },
+    ),
+  ),
+),
+
     );
   }
 
