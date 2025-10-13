@@ -40,6 +40,10 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   shared_preferences: ^2.3.2
+  # flutter_local_notifications: ^12.0.4
+  timezone: ^0.9.0  # <-- add this line
+  awesome_notifications: ^0.10.1
+  
 
   # Firebase Auth
   firebase_core: ^2.25.0

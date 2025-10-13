@@ -12,14 +12,16 @@ class BottomNavBar extends StatelessWidget {
       color: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _navItem(context, 0, '🏠', 'Home', '/home'),
-          _navItem(context, 1, '📖', 'Recipes', '/recipes'),
-          _navItem(context, 2, '✨', 'AI', '/ai'),
-          _navItem(context, 3, '👤', 'Profile', '/profile'),
-        ],
-      ),
+  mainAxisAlignment: MainAxisAlignment.spaceAround,
+  children: [
+    _navItem(context, 0, '🏠', 'Home', '/home'),
+    _navItem(context, 1, '📖', 'Recipes', '/recipes'),
+    _navItem(context, 2, '✨', 'AI', '/ai'),
+    _navItem(context, 3, '👤', 'Profile', '/profile'),
+    _navItem(context, 4, '⏰', 'Reminders', '/reminders'), // ← added
+  ],
+),
+
     );
   }
 

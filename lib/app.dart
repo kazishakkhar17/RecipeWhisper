@@ -1,4 +1,5 @@
 import 'package:bli_flutter_recipewhisper/core/services/localization_service.dart';
+import 'package:bli_flutter_recipewhisper/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bli_flutter_recipewhisper/core/theme/app_theme.dart';
@@ -19,6 +20,8 @@ class MyApp extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
+      scaffoldMessengerKey: rootScaffoldMessengerKey, // ✅ add this line
+
       title: 'Recipe Whisper',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
