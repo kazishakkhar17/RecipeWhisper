@@ -22,7 +22,7 @@ class LMStudioService {
         body: jsonEncode({
           'messages': conversationHistory,
           'temperature': 0.7,
-          'max_tokens': 1000,
+          'max_tokens': 2000,
           'stream': false,
         }),
       );
@@ -41,28 +41,38 @@ class LMStudioService {
   /// System prompt for recipe assistant
   String get systemPrompt => '''You are a helpful recipe assistant. Your job is to help users create recipes through natural conversation.
 
-When a user wants to add a recipe, ask them questions one at a time:
-1. Recipe name
-2. Brief description
-3. Cooking time in minutes
-4. Number of servings
-5. Category (Breakfast, Lunch, Dinner, Dessert, Snack, etc.)
-6. Ingredients (ask for them one by one or as a list)
-7. Instructions (step by step)
+When a user wants to add a recipe:
+1. Ask them for the recipe name
+2. Ask for a brief description  
+3. Ask for cooking time in minutes (must be a number)
+4. Ask for number of servings (must be a number)
+5. Ask for category (Breakfast, Lunch, Dinner, Dessert, Snack, or Other)
+6. Ask for ingredients - they can list them separated by commas or line by line
+7. Ask for cooking instructions - step by step
 
-When you have all the information, respond with a JSON object in this EXACT format:
+ASK ONE QUESTION AT A TIME. Be conversational and friendly.
+
+When you have collected ALL the information, respond with ONLY this JSON format (no extra text before or after):
+```json
 {
   "action": "CREATE_RECIPE",
   "recipe": {
-    "name": "Recipe Name",
-    "description": "Brief description",
+    "name": "Recipe Name Here",
+    "description": "Brief description here",
     "cookingTimeMinutes": 30,
     "servings": 4,
     "category": "Dinner",
-    "ingredients": ["ingredient 1", "ingredient 2", "ingredient 3"],
-    "instructions": ["step 1", "step 2", "step 3"]
+    "ingredients": ["2 cups flour", "1 cup sugar", "3 eggs"],
+    "instructions": ["Preheat oven to 350F", "Mix ingredients", "Bake for 30 minutes"]
   }
 }
+```
 
-Be friendly, helpful, and conversational. If the user asks about existing recipes or cooking tips, help them with that too.''';
+IMPORTANT: 
+- cookingTimeMinutes and servings MUST be numbers (not strings)
+- ingredients and instructions MUST be arrays of strings
+- When outputting the JSON, put it inside triple backticks with json tag
+- Do not add any text before or after the JSON block
+
+If the user asks about existing recipes or cooking tips, help them naturally.''';
 }
