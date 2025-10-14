@@ -1,6 +1,7 @@
 import 'package:bli_flutter_recipewhisper/features/auth/presentation/screens/profile_screen.dart';
 import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 import 'package:bli_flutter_recipewhisper/features/reminders/presentation/screens/reminder_screen.dart';
+import 'package:bli_flutter_recipewhisper/features/ai_suggestions/presentation/screens/ai_suggestion_screen.dart'; // ✅ ADDED
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,6 @@ import 'package:bli_flutter_recipewhisper/features/auth/presentation/providers/a
 import '../providers/recipe_provider.dart';
 import '../widgets/recipe_card.dart';
 import 'add_recipe_screen.dart';
-import 'package:bli_flutter_recipewhisper/features/ai_suggestions/presentation/screens/ai_suggestion_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> get _screens => [
     const HomeContent(),
     const RecipesScreen(),
-    const AiSuggestionScreen(), 
+    const AiSuggestionScreen(), // ✅ CHANGED from AiScreen()
     const ProfileScreen(),
     const ReminderScreen(),
   ];
@@ -62,10 +62,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             label: context.tr('profile'),
           ),
           BottomNavigationBarItem(
-  icon: const Text('⏰', style: TextStyle(fontSize: 24)),
-  label: context.tr('reminders'),
-),
-
+            icon: const Text('⏰', style: TextStyle(fontSize: 24)),
+            label: context.tr('reminders'),
+          ),
         ],
       ),
     );
@@ -312,20 +311,6 @@ class RecipesScreen extends ConsumerWidget {
           );
         },
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-class AiScreen extends ConsumerWidget {
-  const AiScreen({super.key});
-  
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Text(
-        '${context.tr('ai')} Screen',
-        style: const TextStyle(fontSize: 20),
       ),
     );
   }

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/localization/app_localizations.dart';
-import '../../../recipes/domain/entities/recipe.dart';
-import '../../../recipes/presentation/providers/recipe_provider.dart';
 import '../providers/ai_suggestion_provider.dart';
-//import '../../../../recipes/presentation/providers/recipe_provider.dart';
-//import '../../../../recipes/domain/entities/recipe.dart';
 
 class AiSuggestionScreen extends ConsumerStatefulWidget {
   const AiSuggestionScreen({super.key});
@@ -17,12 +13,13 @@ class AiSuggestionScreen extends ConsumerStatefulWidget {
 class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  Recipe? _pendingRecipe;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -43,45 +40,50 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
     if (message.isEmpty) return;
 
     _messageController.clear();
-    final recipe = await ref.read(aiChatProvider.notifier).sendMessage(message);
-
-    if (recipe != null) {
-      setState(() {
-        _pendingRecipe = recipe;
-      });
-    }
-
+    _focusNode.unfocus(); // Hide keyboard
+    
+    await ref.read(aiChatProvider.notifier).sendMessage(message);
+    
     _scrollToBottom();
   }
 
-  Future<void> _saveRecipe() async {
-    if (_pendingRecipe == null) return;
-
-    try {
-      await ref.read(recipeListProvider.notifier).addRecipe(_pendingRecipe!);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr('recipe_added')),
-            backgroundColor: Colors.green,
+  Widget _buildQuickAction(String text, IconData icon) {
+    return InkWell(
+      onTap: () {
+        _messageController.text = text;
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
           ),
-        );
-      }
-
-      setState(() {
-        _pendingRecipe = null;
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving recipe: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -103,132 +105,156 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               ref.read(aiChatProvider.notifier).clearChat();
-              setState(() {
-                _pendingRecipe = null;
-              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Chat cleared! Start a new conversation.'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
             },
             tooltip: 'Clear chat',
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('ℹ️ How to use'),
+                  content: const SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '1. Make sure LM Studio is running on localhost:1234',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '2. Load a model in LM Studio',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '3. Say "I want to add a recipe"',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '4. Answer the AI\'s questions one by one',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '5. The AI will create and save the recipe automatically!',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Got it!'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            tooltip: 'Help',
           ),
         ],
       ),
       body: Column(
         children: [
+          // Quick action buttons (only show when chat is new)
+          if (chatState.messages.length <= 1)
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text(
+                    '✨ Quick Actions',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _buildQuickAction('I want to add a recipe', Icons.add),
+                      _buildQuickAction('Suggest a breakfast recipe', Icons.breakfast_dining),
+                      _buildQuickAction('Quick dinner ideas', Icons.dinner_dining),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          const Divider(height: 1),
+
           // Chat messages
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: chatState.messages.length,
-              itemBuilder: (context, index) {
-                final message = chatState.messages[index];
-                return _ChatBubble(message: message);
-              },
-            ),
-          ),
-
-          // Pending recipe preview
-          if (_pendingRecipe != null)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.restaurant, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _pendingRecipe!.name,
-                          style: const TextStyle(
-                            color: Colors.white,
+            child: chatState.messages.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🤖', style: TextStyle(fontSize: 60)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Start chatting!',
+                          style: TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[600],
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: chatState.messages.length,
+                    itemBuilder: (context, index) {
+                      final message = chatState.messages[index];
+                      return _ChatBubble(message: message);
+                    },
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _pendingRecipe!.description,
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _InfoChip(
-                        icon: Icons.timer,
-                        label: '${_pendingRecipe!.cookingTimeMinutes} min',
-                      ),
-                      const SizedBox(width: 8),
-                      _InfoChip(
-                        icon: Icons.restaurant,
-                        label: '${_pendingRecipe!.servings} servings',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _pendingRecipe = null;
-                          });
-                        },
-                        child: const Text(
-                          'Dismiss',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: _saveRecipe,
-                        icon: const Icon(Icons.save),
-                        label: Text(context.tr('save')),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFFFF6B6B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          ),
 
           // Loading indicator
           if (chatState.isLoading)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: const Row(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
-                  SizedBox(width: 12),
-                  Text('AI is thinking...'),
+                  const SizedBox(width: 12),
+                  const Text(
+                    '🤔 AI is thinking...',
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
                 ],
               ),
             ),
@@ -240,12 +266,12 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.red[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.shade300),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error, color: Colors.red),
+                  const Icon(Icons.error_outline, color: Colors.red),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -270,40 +296,73 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type your message...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      focusNode: _focusNode,
+                      decoration: InputDecoration(
+                        hintText: 'Type your message...',
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF6B6B),
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
+                      maxLines: null,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
+                      enabled: !chatState.isLoading,
                     ),
-                    maxLines: null,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: chatState.isLoading
+                          ? LinearGradient(
+                              colors: [Colors.grey[400]!, Colors.grey[400]!],
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+                            ),
+                      shape: BoxShape.circle,
+                      boxShadow: chatState.isLoading
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
-                    shape: BoxShape.circle,
+                    child: IconButton(
+                      icon: const Icon(Icons.send_rounded, color: Colors.white),
+                      onPressed: chatState.isLoading ? null : _sendMessage,
+                      tooltip: 'Send message',
+                    ),
                   ),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: chatState.isLoading ? null : _sendMessage,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -336,7 +395,12 @@ class _ChatBubble extends StatelessWidget {
                 )
               : null,
           color: isUser ? null : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(isUser ? 20 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 20),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -350,41 +414,9 @@ class _ChatBubble extends StatelessWidget {
           style: TextStyle(
             color: isUser ? Colors.white : Colors.black87,
             fontSize: 15,
+            height: 1.4,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: Colors.white),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
