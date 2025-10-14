@@ -8,6 +8,7 @@ import 'package:bli_flutter_recipewhisper/features/auth/presentation/providers/a
 import '../providers/recipe_provider.dart';
 import '../widgets/recipe_card.dart';
 import 'add_recipe_screen.dart';
+import 'package:bli_flutter_recipewhisper/features/ai_suggestions/presentation/screens/ai_suggestion_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -22,7 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> get _screens => [
     const HomeContent(),
     const RecipesScreen(),
-    const AiScreen(),
+    const AiSuggestionScreen(), 
     const ProfileScreen(),
     const ReminderScreen(),
   ];
