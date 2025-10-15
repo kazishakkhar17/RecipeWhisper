@@ -53,7 +53,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
   void _initializeChat() {
     final welcomeMessage = ChatMessage(
-      text: "👋 Hi! I'm your AI recipe assistant. I can help you create recipes through conversation. Just say 'I want to add a recipe' and I'll guide you through it step by step!",
+      text: "👋 Hi! I'm your AI recipe assistant. Just tell me what dish you want (e.g., 'spaghetti bolognese', 'chocolate chip cookies'), and I'll create a complete recipe for you instantly!\n\nYou can also ask me for cooking tips, meal suggestions, or help with meal planning. 🍳",
       isUser: false,
     );
     state = state.copyWith(messages: [welcomeMessage]);
@@ -80,22 +80,22 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
         conversationHistory: conversationHistory,
       );
 
-      print('🤖 AI Response: $aiResponse'); // Debug log
+      print('🤖 Raw AI Response:\n$aiResponse\n---END RESPONSE---');
 
-      // Check if response contains a recipe
+      // Try to parse recipe from response
       final recipe = _parseRecipeFromResponse(aiResponse);
 
       if (recipe != null) {
-        print('✅ Recipe parsed successfully: ${recipe.name}'); // Debug log
+        print('✅ Recipe parsed successfully: ${recipe.name}');
         
         // Add the recipe to Hive through RecipeNotifier
         await _ref.read(recipeListProvider.notifier).addRecipe(recipe);
         
-        print('💾 Recipe added to Hive'); // Debug log
+        print('💾 Recipe added to Hive');
         
-        // Add success message
+        // Add success message (NOT the JSON)
         final successMessage = ChatMessage(
-          text: "✅ Perfect! I've created and saved '${recipe.name}' to your recipe collection.\n\n📋 Details:\n- Cook time: ${recipe.cookingTimeMinutes} minutes\n- Servings: ${recipe.servings}\n- Category: ${recipe.category}\n- Ingredients: ${recipe.ingredients.length}\n- Steps: ${recipe.instructions.length}\n\nYou can find it in your Recipes tab now! 🎉",
+          text: "✅ Perfect! I've created and saved '${recipe.name}' to your recipe collection.\n\n📋 Summary:\n• Cook time: ${recipe.cookingTimeMinutes} minutes\n• Servings: ${recipe.servings}\n• Category: ${recipe.category}\n• Ingredients: ${recipe.ingredients.length}\n• Steps: ${recipe.instructions.length}\n\nYou can find it in your Recipes tab now! 🎉\n\nWant to create another recipe? Just tell me what you'd like to make!",
           isUser: false,
         );
         
@@ -103,7 +103,24 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
           messages: [...state.messages, successMessage],
           isLoading: false,
         );
+        
+        return recipe;
       } else {
+        // Check if response looks like JSON but failed to parse
+        if (aiResponse.trim().startsWith('{') && aiResponse.contains('CREATE_RECIPE')) {
+          print('⚠️ Response looks like JSON but failed to parse. Showing error.');
+          final errorMessage = ChatMessage(
+            text: "🔧 I created a recipe, but there was a formatting issue. Let me try again. Please repeat your request.",
+            isUser: false,
+          );
+          
+          state = state.copyWith(
+            messages: [...state.messages, errorMessage],
+            isLoading: false,
+          );
+          return null;
+        }
+        
         // Add AI message (normal conversation)
         final aiChatMessage = ChatMessage(
           text: aiResponse,
@@ -114,9 +131,11 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
           messages: [...state.messages, aiChatMessage],
           isLoading: false,
         );
+        
+        return null;
       }
     } catch (e) {
-      print('❌ Error: $e'); // Debug log
+      print('❌ Error: $e');
       
       state = state.copyWith(
         isLoading: false,
@@ -131,6 +150,8 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       state = state.copyWith(
         messages: [...state.messages, errorMessage],
       );
+      
+      return null;
     }
   }
 
@@ -143,12 +164,18 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       'content': _aiService.systemPrompt,
     });
 
-    // Add conversation messages (only last 10 to avoid token limit)
-    final recentMessages = state.messages.length > 10 
-        ? state.messages.sublist(state.messages.length - 10)
+    // Add conversation messages (only last 8 to avoid token limit)
+    final recentMessages = state.messages.length > 8 
+        ? state.messages.sublist(state.messages.length - 8)
         : state.messages;
 
     for (var message in recentMessages) {
+      // Skip system messages (welcome message, success messages, errors)
+      if (!message.isUser && message.text.startsWith('👋')) continue;
+      if (!message.isUser && message.text.startsWith('✅')) continue;
+      if (!message.isUser && message.text.startsWith('😔')) continue;
+      if (!message.isUser && message.text.startsWith('🔧')) continue;
+      
       history.add({
         'role': message.isUser ? 'user' : 'assistant',
         'content': message.text,
@@ -160,87 +187,137 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
   Recipe? _parseRecipeFromResponse(String response) {
     try {
-      print('🔍 Parsing response for recipe...'); // Debug log
+      print('🔍 Parsing response for recipe...');
       
-      // Method 1: Try to find JSON in markdown code blocks
-      final markdownJsonMatch = RegExp(r'```json\s*(\{[\s\S]*?\})\s*```', multiLine: true).firstMatch(response);
-      String? jsonString;
+      // Remove all markdown code blocks and extra whitespace
+      String cleanResponse = response
+          .trim()
+          .replaceAll(RegExp(r'```json\s*'), '')
+          .replaceAll(RegExp(r'```\s*'), '')
+          .replaceAll(RegExp(r'^\s+', multiLine: true), '') // Remove leading whitespace from each line
+          .trim();
       
-      if (markdownJsonMatch != null) {
-        jsonString = markdownJsonMatch.group(1);
-        print('📦 Found JSON in markdown block'); // Debug log
-      } else {
-        // Method 2: Try to find any JSON object
-        final jsonMatch = RegExp(r'\{[\s\S]*?"action"\s*:\s*"CREATE_RECIPE"[\s\S]*?\}').firstMatch(response);
-        if (jsonMatch != null) {
-          jsonString = jsonMatch.group(0);
-          print('📦 Found JSON in response'); // Debug log
-        }
+      print('🧹 Cleaned response length: ${cleanResponse.length}');
+      
+      // Find the JSON object - look for the opening and closing braces
+      final startIndex = cleanResponse.indexOf('{');
+      final lastIndex = cleanResponse.lastIndexOf('}');
+      
+      if (startIndex == -1 || lastIndex == -1 || startIndex >= lastIndex) {
+        print('❌ No valid JSON object found');
+        return null;
+      }
+      
+      // Extract just the JSON object
+      String jsonString = cleanResponse.substring(startIndex, lastIndex + 1);
+      
+      // Additional cleanup - remove any control characters and normalize whitespace
+      jsonString = jsonString
+          .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '') // Remove control characters
+          .replaceAll(RegExp(r'\s+'), ' ') // Normalize whitespace
+          .replaceAll(', }', '}') // Fix trailing commas before closing braces
+          .replaceAll(', ]', ']'); // Fix trailing commas before closing brackets
+      
+      print('📦 Extracted JSON (first 200 chars): ${jsonString.substring(0, jsonString.length > 200 ? 200 : jsonString.length)}');
+      
+      // Try to parse the JSON
+      dynamic data;
+      try {
+        data = jsonDecode(jsonString);
+      } catch (e) {
+        print('❌ JSON decode failed: $e');
+        print('📄 Failed JSON string: $jsonString');
+        
+        // Try one more time with even more aggressive cleaning
+        jsonString = _aggressiveJsonCleanup(jsonString);
+        print('🔄 Trying again with aggressive cleanup...');
+        data = jsonDecode(jsonString);
       }
 
-      if (jsonString == null) {
-        print('❌ No JSON found in response'); // Debug log
+      // Validate structure
+      if (data is! Map<String, dynamic>) {
+        print('❌ Parsed data is not a Map');
         return null;
       }
 
-      print('📄 JSON String: $jsonString'); // Debug log
-
-      // Parse JSON
-      final data = jsonDecode(jsonString);
-
-      // Check if it's a recipe creation action
       if (data['action'] != 'CREATE_RECIPE') {
-        print('❌ Action is not CREATE_RECIPE'); // Debug log
+        print('❌ Action is not CREATE_RECIPE, got: ${data['action']}');
         return null;
       }
 
       if (data['recipe'] == null) {
-        print('❌ No recipe data found'); // Debug log
+        print('❌ No recipe data found');
         return null;
       }
 
-      final recipeData = data['recipe'];
-      print('📝 Recipe data: $recipeData'); // Debug log
+      final recipeData = data['recipe'] as Map<String, dynamic>;
+      print('📝 Recipe data keys: ${recipeData.keys.toList()}');
 
-      // Validate and parse fields
-      final name = recipeData['name']?.toString() ?? 'Untitled Recipe';
-      final description = recipeData['description']?.toString() ?? '';
+      // Extract and validate fields
+      final name = recipeData['name']?.toString().trim() ?? 'Untitled Recipe';
+      final description = recipeData['description']?.toString().trim() ?? 'A delicious recipe';
       
-      // Parse cooking time (handle both int and string)
-      final cookingTime = recipeData['cookingTimeMinutes'] is int 
-          ? recipeData['cookingTimeMinutes'] 
-          : int.tryParse(recipeData['cookingTimeMinutes']?.toString() ?? '30') ?? 30;
+      // Parse cooking time
+      int cookingTime = 30;
+      if (recipeData['cookingTimeMinutes'] != null) {
+        if (recipeData['cookingTimeMinutes'] is int) {
+          cookingTime = recipeData['cookingTimeMinutes'];
+        } else if (recipeData['cookingTimeMinutes'] is double) {
+          cookingTime = (recipeData['cookingTimeMinutes'] as double).toInt();
+        } else {
+          cookingTime = int.tryParse(recipeData['cookingTimeMinutes'].toString()) ?? 30;
+        }
+      }
       
-      // Parse servings (handle both int and string)
-      final servings = recipeData['servings'] is int
-          ? recipeData['servings']
-          : int.tryParse(recipeData['servings']?.toString() ?? '2') ?? 2;
+      // Parse servings
+      int servings = 4;
+      if (recipeData['servings'] != null) {
+        if (recipeData['servings'] is int) {
+          servings = recipeData['servings'];
+        } else if (recipeData['servings'] is double) {
+          servings = (recipeData['servings'] as double).toInt();
+        } else {
+          servings = int.tryParse(recipeData['servings'].toString()) ?? 4;
+        }
+      }
       
-      final category = recipeData['category']?.toString() ?? 'Other';
+      final category = recipeData['category']?.toString().trim() ?? 'Other';
       
       // Parse ingredients
-      final ingredientsList = recipeData['ingredients'];
-      final ingredients = ingredientsList is List
-          ? ingredientsList.map((e) => e.toString()).toList()
-          : <String>[];
+      List<String> ingredients = [];
+      if (recipeData['ingredients'] is List) {
+        ingredients = (recipeData['ingredients'] as List)
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
       
       // Parse instructions
-      final instructionsList = recipeData['instructions'];
-      final instructions = instructionsList is List
-          ? instructionsList.map((e) => e.toString()).toList()
-          : <String>[];
+      List<String> instructions = [];
+      if (recipeData['instructions'] is List) {
+        instructions = (recipeData['instructions'] as List)
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+
+      // Validate required fields
+      if (name.isEmpty || name == 'Untitled Recipe') {
+        print('⚠️ Recipe name is empty or default');
+        return null;
+      }
 
       if (ingredients.isEmpty) {
-        print('⚠️ No ingredients found'); // Debug log
+        print('⚠️ No ingredients found');
         return null;
       }
 
       if (instructions.isEmpty) {
-        print('⚠️ No instructions found'); // Debug log
+        print('⚠️ No instructions found');
         return null;
       }
 
-      print('✅ Creating recipe: $name'); // Debug log
+      print('✅ Creating recipe: $name with ${ingredients.length} ingredients and ${instructions.length} steps');
 
       // Create recipe
       final recipe = Recipe.create(
@@ -253,14 +330,26 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
         category: category,
       );
 
-      print('✅ Recipe created successfully!'); // Debug log
+      print('✅ Recipe created successfully!');
       return recipe;
       
     } catch (e, stackTrace) {
-      print('❌ Error parsing recipe: $e'); // Debug log
-      print('Stack trace: $stackTrace'); // Debug log
+      print('❌ Error parsing recipe: $e');
+      print('📚 Stack trace: $stackTrace');
       return null;
     }
+  }
+
+  /// Aggressive JSON cleanup for malformed responses
+  String _aggressiveJsonCleanup(String json) {
+    return json
+        .replaceAll(RegExp(r',\s*}'), '}') // Remove trailing commas before }
+        .replaceAll(RegExp(r',\s*]'), ']') // Remove trailing commas before ]
+        .replaceAll(RegExp(r'}\s*{'), '},{') // Fix adjacent objects
+        .replaceAll(RegExp(r']\s*\['), '],[') // Fix adjacent arrays
+        .replaceAll(RegExp(r'\n\s*\n'), '\n') // Remove multiple newlines
+        .replaceAll(RegExp(r'\r'), '') // Remove carriage returns
+        .trim();
   }
 
   void clearChat() {
