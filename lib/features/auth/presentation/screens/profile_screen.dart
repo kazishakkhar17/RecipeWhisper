@@ -14,41 +14,57 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isEditingName = false;
+  bool _isEditingProfile = false;
+
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _nameController.text = _auth.currentUser?.displayName ?? 'User';
+    final user = _auth.currentUser;
+    _nameController.text = user?.displayName ?? 'User';
+    // For age, height, weight, you can fetch from Firestore if needed
+    _ageController.text = '';
+    _heightController.text = '';
+    _weightController.text = '';
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
-  Future<void> _updateDisplayName() async {
+  Future<void> _updateProfile() async {
     try {
       await _auth.currentUser?.updateDisplayName(_nameController.text.trim());
       await _auth.currentUser?.reload();
+
       setState(() {
-        _isEditingName = false;
+        _isEditingProfile = false;
       });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.tr('name_updated')),
+            content: Text(context.tr('profile_updated')),
             backgroundColor: Colors.green,
           ),
         );
       }
+
+      // TODO: Save age, height, weight to Firestore if needed
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${context.tr('error_updating_name')}: $e'),
+            content: Text('${context.tr('error_updating_profile')}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -185,8 +201,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Display Name
-                  if (!_isEditingName)
+                  // Display User Info
+                  if (!_isEditingProfile)
                     Column(
                       children: [
                         Text(
@@ -207,10 +223,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             fontSize: 14,
                           ),
                         ),
+                        const SizedBox(height: 8),
+                        // Age / Height / Weight display
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_ageController.text.isNotEmpty)
+                              Text(
+                                '${context.tr('age')}: ${_ageController.text}',
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
+                            const SizedBox(width: 12),
+                            if (_heightController.text.isNotEmpty)
+                              Text(
+                                '${context.tr('height')}: ${_heightController.text} cm',
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
+                            const SizedBox(width: 12),
+                            if (_weightController.text.isNotEmpty)
+                              Text(
+                                '${context.tr('weight')}: ${_weightController.text} kg',
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
+                          ],
+                        ),
                       ],
                     )
                   else
-                    // Edit Name Form
+                    // Edit Profile Form
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -233,6 +276,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _ageController,
+                                  style: const TextStyle(color: Colors.white),
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: context.tr('age'),
+                                    labelStyle:
+                                        const TextStyle(color: Colors.white70),
+                                    enabledBorder: const UnderlineInputBorder(
+                                      borderSide: BorderSide(color: Colors.white70),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: _heightController,
+                                  style: const TextStyle(color: Colors.white),
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: context.tr('height_cm'),
+                                    labelStyle:
+                                        const TextStyle(color: Colors.white70),
+                                    enabledBorder: const UnderlineInputBorder(
+                                      borderSide: BorderSide(color: Colors.white70),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: _weightController,
+                                  style: const TextStyle(color: Colors.white),
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: context.tr('weight_kg'),
+                                    labelStyle:
+                                        const TextStyle(color: Colors.white70),
+                                    enabledBorder: const UnderlineInputBorder(
+                                      borderSide: BorderSide(color: Colors.white70),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -240,8 +335,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               TextButton(
                                 onPressed: () {
                                   setState(() {
-                                    _isEditingName = false;
-                                    _nameController.text = user?.displayName ?? 'User';
+                                    _isEditingProfile = false;
+                                    _nameController.text =
+                                        user?.displayName ?? 'User';
                                   });
                                 },
                                 child: Text(
@@ -251,7 +347,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ),
                               const SizedBox(width: 8),
                               ElevatedButton(
-                                onPressed: _updateDisplayName,
+                                onPressed: _updateProfile,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   foregroundColor: const Color(0xFFFF6B6B),
@@ -274,8 +370,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-                  
-                  // Account Section
                   Text(
                     context.tr('account'),
                     style: const TextStyle(
@@ -289,7 +383,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   InkWell(
                     onTap: () {
                       setState(() {
-                        _isEditingName = true;
+                        _isEditingProfile = true;
                       });
                     },
                     child: Container(
@@ -377,7 +471,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 32),
 
                   // Settings Section
@@ -432,7 +525,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         Switch(
                           value: isDarkMode,
-                          onChanged: (_) => ref.read(themeProvider.notifier).toggleTheme(),
+                          onChanged: (_) =>
+                              ref.read(themeProvider.notifier).toggleTheme(),
                           activeColor: const Color(0xFFFF6B6B),
                         ),
                       ],
@@ -472,7 +566,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              context.tr('english_language'),
+                              context.tr('language'),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
@@ -482,18 +576,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         Switch(
                           value: isEnglish,
-                          onChanged: (_) => ref.read(localeProvider.notifier).toggleLocale(),
+                          onChanged: (_) =>
+                              ref.read(localeProvider.notifier).toggleLocale(),
                           activeColor: const Color(0xFFFF6B6B),
                         ),
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 24),
 
                   // Current language badge
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
