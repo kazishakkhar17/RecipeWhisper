@@ -1,42 +1,53 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class LMStudioService {
+class GroqService {
   final String baseUrl;
-  
-  LMStudioService({this.baseUrl = 'http://localhost:1234'});
+  final String apiKey;
+  final String model;
 
-  /// Send a message to LM Studio and get AI response
-  Future<String> sendMessage({
-    required String message,
-    required List<Map<String, String>> conversationHistory,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/v1/chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'messages': conversationHistory,
-          'temperature': 0.7,
-          'max_tokens': 2000,
-          'stream': false,
-        }),
-      );
+  GroqService({
+    this.baseUrl = 'https://api.groq.com/openai/v1',
+    String? apiKey,
+    String? model,
+  })  : apiKey = apiKey ?? dotenv.env['GROQ_API_KEY'] ?? '',
+        model = model ?? dotenv.env['GROQ_MODEL'] ?? 'llama-3.3-70b-versatile'; // FIXED: Changed from llama3.3 to llama-3.3
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'];
-      } else {
-        throw Exception('Failed to get AI response: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error connecting to LM Studio: $e');
+  Future<String> sendMessage({required String message}) async {
+    final conversationHistory = [
+      {
+        'role': 'system',
+        'content': systemPrompt,
+      },
+      {
+        'role': 'user',
+        'content': message,
+      },
+    ];
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/chat/completions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': model,
+        'messages': conversationHistory,
+        'temperature': 0.7,
+        'max_tokens': 2048,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['choices'][0]['message']['content'];
+    } else {
+      throw Exception('Groq API error: ${response.statusCode} - ${response.body}');
     }
   }
 
-  /// System prompt for recipe assistant with JSON schema
   String get systemPrompt => '''You are a helpful recipe assistant AI. Your job is to create recipes based on user requests.
 
 BEHAVIOR:
@@ -80,90 +91,5 @@ CRITICAL JSON REQUIREMENTS:
 - "category" MUST be one of: Breakfast, Lunch, Dinner, Dessert, Snack, Other
 - Each ingredient should include measurements (e.g., "2 cups flour" not just "flour")
 - Each instruction should be a complete, clear step
-
-EXAMPLES:
-
-User: "pasta carbonara"
-Assistant response (ONLY this JSON):
-{
-  "action": "CREATE_RECIPE",
-  "recipe": {
-    "name": "Classic Pasta Carbonara",
-    "description": "A creamy Italian pasta dish made with eggs, cheese, and pancetta",
-    "cookingTimeMinutes": 25,
-    "servings": 4,
-    "category": "Dinner",
-    "ingredients": [
-      "400g spaghetti",
-      "200g pancetta or bacon, diced",
-      "4 large eggs",
-      "100g Parmesan cheese, grated",
-      "2 cloves garlic, minced",
-      "Salt and black pepper to taste",
-      "2 tablespoons olive oil"
-    ],
-    "instructions": [
-      "Bring a large pot of salted water to boil and cook spaghetti according to package directions",
-      "While pasta cooks, heat olive oil in a large pan and cook pancetta until crispy, about 5 minutes",
-      "Add minced garlic and cook for 1 minute until fragrant",
-      "In a bowl, whisk together eggs and half the Parmesan cheese",
-      "Drain pasta, reserving 1 cup of pasta water",
-      "Remove pan from heat and add hot pasta to the pancetta",
-      "Quickly stir in egg mixture, adding pasta water as needed to create a creamy sauce",
-      "Season with salt and pepper, top with remaining Parmesan and serve immediately"
-    ]
-  }
-}
-
-User: "chocolate cake"
-Assistant response (ONLY this JSON):
-{
-  "action": "CREATE_RECIPE",
-  "recipe": {
-    "name": "Moist Chocolate Cake",
-    "description": "A rich and decadent chocolate cake perfect for any celebration",
-    "cookingTimeMinutes": 45,
-    "servings": 8,
-    "category": "Dessert",
-    "ingredients": [
-      "2 cups all-purpose flour",
-      "2 cups sugar",
-      "3/4 cup cocoa powder",
-      "2 teaspoons baking soda",
-      "1 teaspoon baking powder",
-      "1 teaspoon salt",
-      "2 eggs",
-      "1 cup strong black coffee, cooled",
-      "1 cup buttermilk",
-      "1/2 cup vegetable oil",
-      "2 teaspoons vanilla extract"
-    ],
-    "instructions": [
-      "Preheat oven to 350°F (175°C) and grease two 9-inch round cake pans",
-      "In a large bowl, whisk together flour, sugar, cocoa powder, baking soda, baking powder, and salt",
-      "In another bowl, beat eggs then add coffee, buttermilk, oil, and vanilla",
-      "Pour wet ingredients into dry ingredients and mix until just combined",
-      "Divide batter evenly between prepared pans",
-      "Bake for 30-35 minutes or until a toothpick inserted in center comes out clean",
-      "Cool in pans for 10 minutes, then turn out onto wire racks to cool completely",
-      "Frost with your favorite chocolate frosting and serve"
-    ]
-  }
-}
-
-User: "quick breakfast ideas"
-Assistant: Here are some quick breakfast ideas you could make:
-- Avocado toast with eggs
-- Greek yogurt parfait with granola
-- Overnight oats
-- Smoothie bowl
-- Breakfast burrito
-
-Which one would you like me to create a recipe for?
-
-REMEMBER: 
-- If user mentions a specific dish name, create the recipe immediately
-- Only return JSON when creating a recipe
-- Be conversational for general questions
-- Always make recipes realistic, detailed, and delicious!''';
+''';
 }

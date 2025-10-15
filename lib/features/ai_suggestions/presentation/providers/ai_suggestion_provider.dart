@@ -44,7 +44,7 @@ class AiChatState {
 
 // AI Chat Provider
 class AiChatNotifier extends StateNotifier<AiChatState> {
-  final LMStudioService _aiService;
+  final GroqService _aiService;
   final Ref _ref;
 
   AiChatNotifier(this._aiService, this._ref) : super(AiChatState()) {
@@ -53,7 +53,8 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
   void _initializeChat() {
     final welcomeMessage = ChatMessage(
-      text: "👋 Hi! I'm your AI recipe assistant. Just tell me what dish you want (e.g., 'spaghetti bolognese', 'chocolate chip cookies'), and I'll create a complete recipe for you instantly!\n\nYou can also ask me for cooking tips, meal suggestions, or help with meal planning. 🍳",
+      text:
+          "👋 Hi! I'm your AI recipe assistant. Just tell me what dish you want (e.g., 'spaghetti bolognese', 'chocolate chip cookies'), and I'll create a complete recipe for you instantly!\n\nYou can also ask me for cooking tips, meal suggestions, or help with meal planning. 🍳",
       isUser: false,
     );
     state = state.copyWith(messages: [welcomeMessage]);
@@ -71,13 +72,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     );
 
     try {
-      // Build conversation history
-      final conversationHistory = _buildConversationHistory();
-
-      // Get AI response
+      // Get AI response with stateless context
       final aiResponse = await _aiService.sendMessage(
         message: userMessage,
-        conversationHistory: conversationHistory,
       );
 
       print('🤖 Raw AI Response:\n$aiResponse\n---END RESPONSE---');
@@ -87,240 +84,118 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
       if (recipe != null) {
         print('✅ Recipe parsed successfully: ${recipe.name}');
-        
+
         // Add the recipe to Hive through RecipeNotifier
         await _ref.read(recipeListProvider.notifier).addRecipe(recipe);
-        
         print('💾 Recipe added to Hive');
-        
+
         // Add success message (NOT the JSON)
         final successMessage = ChatMessage(
-          text: "✅ Perfect! I've created and saved '${recipe.name}' to your recipe collection.\n\n📋 Summary:\n• Cook time: ${recipe.cookingTimeMinutes} minutes\n• Servings: ${recipe.servings}\n• Category: ${recipe.category}\n• Ingredients: ${recipe.ingredients.length}\n• Steps: ${recipe.instructions.length}\n\nYou can find it in your Recipes tab now! 🎉\n\nWant to create another recipe? Just tell me what you'd like to make!",
+          text:
+              "✅ Perfect! I've created and saved '${recipe.name}' to your recipe collection.\n\n📋 Summary:\n• Cook time: ${recipe.cookingTimeMinutes} minutes\n• Servings: ${recipe.servings}\n• Category: ${recipe.category}\n• Ingredients: ${recipe.ingredients.length}\n• Steps: ${recipe.instructions.length}\n\nYou can find it in your Recipes tab now! 🎉\n\nWant to create another recipe? Just tell me what you'd like to make!",
           isUser: false,
         );
-        
+
         state = state.copyWith(
           messages: [...state.messages, successMessage],
           isLoading: false,
         );
-        
+
         return recipe;
       } else {
-        // Check if response looks like JSON but failed to parse
-        if (aiResponse.trim().startsWith('{') && aiResponse.contains('CREATE_RECIPE')) {
-          print('⚠️ Response looks like JSON but failed to parse. Showing error.');
-          final errorMessage = ChatMessage(
-            text: "🔧 I created a recipe, but there was a formatting issue. Let me try again. Please repeat your request.",
-            isUser: false,
-          );
-          
-          state = state.copyWith(
-            messages: [...state.messages, errorMessage],
-            isLoading: false,
-          );
-          return null;
-        }
-        
-        // Add AI message (normal conversation)
-        final aiChatMessage = ChatMessage(
-          text: aiResponse,
+        // Add AI message (normal conversation or fallback)
+        final fallbackMessage = ChatMessage(
+          text: aiResponse.trim().isNotEmpty
+              ? aiResponse
+              : "🤖 Hmm, I didn't understand that. Could you try asking in a different way?",
           isUser: false,
         );
 
         state = state.copyWith(
-          messages: [...state.messages, aiChatMessage],
+          messages: [...state.messages, fallbackMessage],
           isLoading: false,
         );
-        
+
         return null;
       }
     } catch (e) {
       print('❌ Error: $e');
+
+      // FIXED: Updated error message for Groq API
+      final errorMessage = ChatMessage(
+        text:
+            "😕 Sorry, I encountered an error while connecting to Groq API.\n\nPlease make sure:\n1. Your GROQ_API_KEY is set correctly in .env file\n2. You have an active internet connection\n3. Your API key has sufficient credits\n\nError details: ${e.toString()}",
+        isUser: false,
+      );
       
       state = state.copyWith(
+        messages: [...state.messages, errorMessage],
         isLoading: false,
         error: 'Error: ${e.toString()}',
       );
-      
-      // Add error message to chat
-      final errorMessage = ChatMessage(
-        text: "😔 Sorry, I encountered an error. Please make sure:\n\n1. LM Studio is running\n2. A model is loaded\n3. Server is at localhost:1234\n\nError: ${e.toString()}",
-        isUser: false,
-      );
-      state = state.copyWith(
-        messages: [...state.messages, errorMessage],
-      );
-      
+
       return null;
     }
   }
 
-  List<Map<String, String>> _buildConversationHistory() {
-    final history = <Map<String, String>>[];
-    
-    // Add system prompt
-    history.add({
-      'role': 'system',
-      'content': _aiService.systemPrompt,
-    });
-
-    // Add conversation messages (only last 8 to avoid token limit)
-    final recentMessages = state.messages.length > 8 
-        ? state.messages.sublist(state.messages.length - 8)
-        : state.messages;
-
-    for (var message in recentMessages) {
-      // Skip system messages (welcome message, success messages, errors)
-      if (!message.isUser && message.text.startsWith('👋')) continue;
-      if (!message.isUser && message.text.startsWith('✅')) continue;
-      if (!message.isUser && message.text.startsWith('😔')) continue;
-      if (!message.isUser && message.text.startsWith('🔧')) continue;
-      
-      history.add({
-        'role': message.isUser ? 'user' : 'assistant',
-        'content': message.text,
-      });
-    }
-
-    return history;
-  }
-
   Recipe? _parseRecipeFromResponse(String response) {
     try {
-      print('🔍 Parsing response for recipe...');
-      
-      // Remove all markdown code blocks and extra whitespace
       String cleanResponse = response
           .trim()
           .replaceAll(RegExp(r'```json\s*'), '')
           .replaceAll(RegExp(r'```\s*'), '')
-          .replaceAll(RegExp(r'^\s+', multiLine: true), '') // Remove leading whitespace from each line
+          .replaceAll(RegExp(r'^\s+', multiLine: true), '')
           .trim();
-      
-      print('🧹 Cleaned response length: ${cleanResponse.length}');
-      
-      // Find the JSON object - look for the opening and closing braces
+
       final startIndex = cleanResponse.indexOf('{');
       final lastIndex = cleanResponse.lastIndexOf('}');
-      
+
       if (startIndex == -1 || lastIndex == -1 || startIndex >= lastIndex) {
-        print('❌ No valid JSON object found');
         return null;
       }
-      
-      // Extract just the JSON object
+
       String jsonString = cleanResponse.substring(startIndex, lastIndex + 1);
-      
-      // Additional cleanup - remove any control characters and normalize whitespace
       jsonString = jsonString
-          .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '') // Remove control characters
-          .replaceAll(RegExp(r'\s+'), ' ') // Normalize whitespace
-          .replaceAll(', }', '}') // Fix trailing commas before closing braces
-          .replaceAll(', ]', ']'); // Fix trailing commas before closing brackets
-      
-      print('📦 Extracted JSON (first 200 chars): ${jsonString.substring(0, jsonString.length > 200 ? 200 : jsonString.length)}');
-      
-      // Try to parse the JSON
-      dynamic data;
-      try {
-        data = jsonDecode(jsonString);
-      } catch (e) {
-        print('❌ JSON decode failed: $e');
-        print('📄 Failed JSON string: $jsonString');
-        
-        // Try one more time with even more aggressive cleaning
-        jsonString = _aggressiveJsonCleanup(jsonString);
-        print('🔄 Trying again with aggressive cleanup...');
-        data = jsonDecode(jsonString);
-      }
+          .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .replaceAll(', }', '}')
+          .replaceAll(', ]', ']');
 
-      // Validate structure
-      if (data is! Map<String, dynamic>) {
-        print('❌ Parsed data is not a Map');
-        return null;
-      }
+      dynamic data = jsonDecode(jsonString);
 
-      if (data['action'] != 'CREATE_RECIPE') {
-        print('❌ Action is not CREATE_RECIPE, got: ${data['action']}');
-        return null;
-      }
-
-      if (data['recipe'] == null) {
-        print('❌ No recipe data found');
+      if (data is! Map<String, dynamic> || data['action'] != 'CREATE_RECIPE') {
         return null;
       }
 
       final recipeData = data['recipe'] as Map<String, dynamic>;
-      print('📝 Recipe data keys: ${recipeData.keys.toList()}');
-
-      // Extract and validate fields
       final name = recipeData['name']?.toString().trim() ?? 'Untitled Recipe';
-      final description = recipeData['description']?.toString().trim() ?? 'A delicious recipe';
-      
-      // Parse cooking time
-      int cookingTime = 30;
-      if (recipeData['cookingTimeMinutes'] != null) {
-        if (recipeData['cookingTimeMinutes'] is int) {
-          cookingTime = recipeData['cookingTimeMinutes'];
-        } else if (recipeData['cookingTimeMinutes'] is double) {
-          cookingTime = (recipeData['cookingTimeMinutes'] as double).toInt();
-        } else {
-          cookingTime = int.tryParse(recipeData['cookingTimeMinutes'].toString()) ?? 30;
-        }
-      }
-      
-      // Parse servings
-      int servings = 4;
-      if (recipeData['servings'] != null) {
-        if (recipeData['servings'] is int) {
-          servings = recipeData['servings'];
-        } else if (recipeData['servings'] is double) {
-          servings = (recipeData['servings'] as double).toInt();
-        } else {
-          servings = int.tryParse(recipeData['servings'].toString()) ?? 4;
-        }
-      }
-      
+      final description =
+          recipeData['description']?.toString().trim() ?? 'A delicious recipe';
+
+      int cookingTime = int.tryParse(
+              recipeData['cookingTimeMinutes'].toString().split('.').first) ??
+          30;
+      int servings = int.tryParse(
+              recipeData['servings'].toString().split('.').first) ??
+          4;
+
       final category = recipeData['category']?.toString().trim() ?? 'Other';
-      
-      // Parse ingredients
-      List<String> ingredients = [];
-      if (recipeData['ingredients'] is List) {
-        ingredients = (recipeData['ingredients'] as List)
-            .map((e) => e.toString().trim())
-            .where((e) => e.isNotEmpty)
-            .toList();
-      }
-      
-      // Parse instructions
-      List<String> instructions = [];
-      if (recipeData['instructions'] is List) {
-        instructions = (recipeData['instructions'] as List)
-            .map((e) => e.toString().trim())
-            .where((e) => e.isNotEmpty)
-            .toList();
-      }
 
-      // Validate required fields
-      if (name.isEmpty || name == 'Untitled Recipe') {
-        print('⚠️ Recipe name is empty or default');
+      final ingredients = (recipeData['ingredients'] as List)
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      final instructions = (recipeData['instructions'] as List)
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      if (name.isEmpty || ingredients.isEmpty || instructions.isEmpty) {
         return null;
       }
 
-      if (ingredients.isEmpty) {
-        print('⚠️ No ingredients found');
-        return null;
-      }
-
-      if (instructions.isEmpty) {
-        print('⚠️ No instructions found');
-        return null;
-      }
-
-      print('✅ Creating recipe: $name with ${ingredients.length} ingredients and ${instructions.length} steps');
-
-      // Create recipe
-      final recipe = Recipe.create(
+      return Recipe.create(
         name: name,
         description: description,
         ingredients: ingredients,
@@ -329,27 +204,10 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
         servings: servings,
         category: category,
       );
-
-      print('✅ Recipe created successfully!');
-      return recipe;
-      
-    } catch (e, stackTrace) {
-      print('❌ Error parsing recipe: $e');
-      print('📚 Stack trace: $stackTrace');
+    } catch (e) {
+      print('❌ Failed to parse recipe: $e');
       return null;
     }
-  }
-
-  /// Aggressive JSON cleanup for malformed responses
-  String _aggressiveJsonCleanup(String json) {
-    return json
-        .replaceAll(RegExp(r',\s*}'), '}') // Remove trailing commas before }
-        .replaceAll(RegExp(r',\s*]'), ']') // Remove trailing commas before ]
-        .replaceAll(RegExp(r'}\s*{'), '},{') // Fix adjacent objects
-        .replaceAll(RegExp(r']\s*\['), '],[') // Fix adjacent arrays
-        .replaceAll(RegExp(r'\n\s*\n'), '\n') // Remove multiple newlines
-        .replaceAll(RegExp(r'\r'), '') // Remove carriage returns
-        .trim();
   }
 
   void clearChat() {
@@ -358,8 +216,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   }
 }
 
-// Provider
-final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChatState>((ref) {
-  final aiService = LMStudioService();
-  return AiChatNotifier(aiService, ref);
+// Provider - Using Groq
+final aiChatProvider =
+    StateNotifierProvider<AiChatNotifier, AiChatState>((ref) {
+  final groqService = GroqService();
+  return AiChatNotifier(groqService, ref);
 });
