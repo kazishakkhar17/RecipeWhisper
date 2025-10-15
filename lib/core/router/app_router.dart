@@ -1,14 +1,18 @@
 import 'package:bli_flutter_recipewhisper/features/recipes/presentation/screens/cooking_timer_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/animations/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/recipes/presentation/screens/home_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/',
     routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
