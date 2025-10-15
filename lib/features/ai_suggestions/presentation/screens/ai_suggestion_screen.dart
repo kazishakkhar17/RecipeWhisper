@@ -309,8 +309,8 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
         title: Row(
           children: [
             const Text('🤖 '),
-            Text(context.tr('ai')),
-            const Text(' '),
+            // Text(context.tr('ai')),
+            // const Text(' '),
             Text(context.tr('ai_assistant')),
           ],
         ),
