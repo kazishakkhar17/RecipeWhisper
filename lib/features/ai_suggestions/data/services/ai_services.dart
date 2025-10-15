@@ -12,7 +12,7 @@ class GroqService {
     String? apiKey,
     String? model,
   })  : apiKey = apiKey ?? dotenv.env['GROQ_API_KEY'] ?? '',
-        model = model ?? dotenv.env['GROQ_MODEL'] ?? 'llama-3.3-70b-versatile'; // FIXED: Changed from llama3.3 to llama-3.3
+        model = model ?? dotenv.env['GROQ_MODEL'] ?? 'llama-3.3-70b-versatile';
 
   Future<String> sendMessage({required String message}) async {
     final conversationHistory = [
@@ -66,7 +66,7 @@ The JSON MUST be in this EXACT format with NO trailing commas:
     "name": "Recipe Name",
     "description": "A brief 1-2 sentence description",
     "cookingTimeMinutes": 30,
-    "servings": 4,
+    "calories": 450,
     "category": "Dinner",
     "ingredients": [
       "2 cups flour",
@@ -86,7 +86,8 @@ CRITICAL JSON REQUIREMENTS:
 - NO markdown code blocks (no ```json or ```)
 - NO explanatory text before or after the JSON
 - NO trailing commas
-- "cookingTimeMinutes" and "servings" MUST be numbers (not strings)
+- "cookingTimeMinutes" and "calories" MUST be numbers (not strings)
+- "calories" should be a reasonable estimate for the entire recipe (typically 200-800 per serving, estimate total)
 - "ingredients" and "instructions" MUST be arrays of strings
 - "category" MUST be one of: Breakfast, Lunch, Dinner, Dessert, Snack, Other
 - Each ingredient should include measurements (e.g., "2 cups flour" not just "flour")

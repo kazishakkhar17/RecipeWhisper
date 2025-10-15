@@ -20,7 +20,7 @@ class _AddRecipeScreenState extends ConsumerState<AddRecipeScreen> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _cookingTimeController;
-  late TextEditingController _servingsController;
+  late TextEditingController _caloriesController;
   late TextEditingController _categoryController;
 
   final List<TextEditingController> _ingredientControllers = [];
@@ -36,8 +36,8 @@ class _AddRecipeScreenState extends ConsumerState<AddRecipeScreen> {
     _cookingTimeController = TextEditingController(
       text: widget.recipe?.cookingTimeMinutes.toString() ?? '',
     );
-    _servingsController = TextEditingController(
-      text: widget.recipe?.servings.toString() ?? '',
+    _caloriesController = TextEditingController(
+      text: widget.recipe?.calories.toString() ?? '',
     );
     _categoryController = TextEditingController(text: widget.recipe?.category ?? '');
 
@@ -65,7 +65,7 @@ class _AddRecipeScreenState extends ConsumerState<AddRecipeScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     _cookingTimeController.dispose();
-    _servingsController.dispose();
+    _caloriesController.dispose();
     _categoryController.dispose();
     for (var controller in _ingredientControllers) {
       controller.dispose();
@@ -138,7 +138,7 @@ class _AddRecipeScreenState extends ConsumerState<AddRecipeScreen> {
           ingredients: ingredients,
           instructions: instructions,
           cookingTimeMinutes: int.parse(_cookingTimeController.text.trim()),
-          servings: int.parse(_servingsController.text.trim()),
+          calories: int.parse(_caloriesController.text.trim()),
           category: _categoryController.text.trim(),
           updatedAt: DateTime.now(),
         );
@@ -154,7 +154,7 @@ class _AddRecipeScreenState extends ConsumerState<AddRecipeScreen> {
           ingredients: ingredients,
           instructions: instructions,
           cookingTimeMinutes: int.parse(_cookingTimeController.text.trim()),
-          servings: int.parse(_servingsController.text.trim()),
+          calories: int.parse(_caloriesController.text.trim()),
           category: _categoryController.text.trim().isEmpty 
               ? 'Other' 
               : _categoryController.text.trim(),
@@ -216,7 +216,7 @@ class _AddRecipeScreenState extends ConsumerState<AddRecipeScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Cooking time and servings row
+            // Cooking time and calories row
             Row(
               children: [
                 Expanded(
@@ -241,9 +241,9 @@ class _AddRecipeScreenState extends ConsumerState<AddRecipeScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
-                    controller: _servingsController,
+                    controller: _caloriesController,
                     decoration: InputDecoration(
-                      labelText: context.tr('servings'),
+                      labelText: context.tr('calories'),
                       border: const OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,

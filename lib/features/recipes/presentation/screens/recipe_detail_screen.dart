@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 import '../../domain/entities/recipe.dart';
 import '../providers/recipe_provider.dart';
-import '../providers/cooking_timer_provider.dart'; // ✅ NEW import
+import '../providers/cooking_timer_provider.dart';
 import 'add_recipe_screen.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
@@ -101,8 +101,8 @@ class RecipeDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 12),
                     _infoChip(
-                      Icons.restaurant,
-                      '${recipe.servings} ${context.tr('servings')}',
+                      Icons.local_fire_department,
+                      '${recipe.calories} ${context.tr('calories')}',
                     ),
                   ],
                 ),
@@ -227,47 +227,44 @@ class RecipeDetailScreen extends ConsumerWidget {
         ],
       ),
 
-      // ✨ NEW: Start Cooking button at bottom
-bottomNavigationBar: Padding(
-  padding: const EdgeInsets.all(16),
-  child: SizedBox(
-    width: double.infinity,
-    child: Consumer(
-      builder: (context, ref, _) {
-        final timerState = ref.watch(cookingTimerProvider);
-        final timerNotifier = ref.read(cookingTimerProvider.notifier);
-        final isRunningForThisRecipe =
-            timerNotifier.currentRecipe?.id == recipe.id && timerState.isRunning;
+      // Start Cooking button at bottom
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          child: Consumer(
+            builder: (context, ref, _) {
+              final timerState = ref.watch(cookingTimerProvider);
+              final timerNotifier = ref.read(cookingTimerProvider.notifier);
+              final isRunningForThisRecipe =
+                  timerNotifier.currentRecipe?.id == recipe.id && timerState.isRunning;
 
-        return ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            backgroundColor: const Color(0xFFFF6B6B),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+              return ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: const Color(0xFFFF6B6B),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.local_fire_department, color: Colors.white),
+                label: Text(
+                  isRunningForThisRecipe
+                      ? context.tr('resume_cooking')
+                      : context.tr('start_cooking'),
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                ),
+                onPressed: () {
+                  if (!isRunningForThisRecipe) {
+                    timerNotifier.startTimer(recipe);
+                  }
+                  context.push('/cooking-timer');
+                },
+              );
+            },
           ),
-          icon: const Icon(Icons.local_fire_department, color: Colors.white),
-          label: Text(
-            isRunningForThisRecipe
-                ? context.tr('resume_cooking') // dynamic label
-                : context.tr('start_cooking'),
-            style: const TextStyle(color: Colors.white, fontSize: 18),
-          ),
-          onPressed: () {
-            if (!isRunningForThisRecipe) {
-              // Start timer if not already running
-              timerNotifier.startTimer(recipe);
-            }
-            // Navigate to timer screen
-            context.push('/cooking-timer');
-          },
-        );
-      },
-    ),
-  ),
-),
-
+        ),
+      ),
     );
   }
 
