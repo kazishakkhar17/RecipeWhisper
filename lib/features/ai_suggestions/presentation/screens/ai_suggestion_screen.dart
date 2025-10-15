@@ -89,7 +89,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
       key: const ValueKey('suggestions'),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+          colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -132,7 +132,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Personalized recommendations just for you',
+                    context.tr('personalized_recommendations'),
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 14,
@@ -154,36 +154,36 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                   children: [
                     _buildSuggestionCard(
                       icon: '🍳',
-                      title: 'Create a new recipe',
-                      description: 'Let AI help you add recipes through conversation',
+                      title: context.tr('create_new_recipe'),
+                      description: context.tr('create_new_recipe_desc'),
                       onTap: () => _startConversation('I want to add a recipe'),
                     ),
                     const SizedBox(height: 15),
                     _buildSuggestionCard(
                       icon: '🥑',
-                      title: 'Low-carb dinner ideas',
-                      description: 'Healthy and delicious meal suggestions',
+                      title: context.tr('low_carb_dinner'),
+                      description: context.tr('low_carb_dinner_desc'),
                       onTap: () => _startConversation('Suggest low-carb dinner ideas'),
                     ),
                     const SizedBox(height: 15),
                     _buildSuggestionCard(
                       icon: '🍞',
-                      title: 'Quick breakfast recipes',
-                      description: 'Start your day right in under 15 minutes',
+                      title: context.tr('quick_breakfast'),
+                      description: context.tr('quick_breakfast_desc'),
                       onTap: () => _startConversation('Give me quick breakfast ideas'),
                     ),
                     const SizedBox(height: 15),
                     _buildSuggestionCard(
                       icon: '📦',
-                      title: 'Meal prep for the week',
-                      description: 'Save time with batch cooking tips',
+                      title: context.tr('meal_prep'),
+                      description: context.tr('meal_prep_desc'),
                       onTap: () => _startConversation('Help me plan meal prep'),
                     ),
                     const SizedBox(height: 15),
                     _buildSuggestionCard(
                       icon: '🌮',
-                      title: 'Mexican cuisine night',
-                      description: 'Authentic flavors and traditional recipes',
+                      title: context.tr('mexican_cuisine'),
+                      description: context.tr('mexican_cuisine_desc'),
                       onTap: () => _startConversation('Suggest Mexican recipes'),
                     ),
                     const SizedBox(height: 20),
@@ -203,7 +203,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF667eea),
+                  foregroundColor: const Color(0xFFFF6B6B),
                   padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
@@ -259,7 +259,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: const Color(0xFFF7FAFC),
+                color: const Color(0xFFFFF5F0),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Center(
@@ -310,7 +310,8 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
           children: [
             const Text('🤖 '),
             Text(context.tr('ai')),
-            const Text(' Assistant'),
+            const Text(' '),
+            Text(context.tr('ai_assistant')),
           ],
         ),
         leading: IconButton(
@@ -343,7 +344,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => AlertDialog(
+                builder: (ctx) => AlertDialog(
                   title: Text('ℹ️ ${context.tr('how_to_use')}'),
                   content: const SingleChildScrollView(
                     child: Column(
@@ -362,8 +363,8 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Got it!'),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(context.tr('got_it')),
                     ),
                   ],
                 ),
@@ -611,17 +612,17 @@ class _RecipePreviewCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _InfoChip(icon: Icons.timer_outlined, label: '${recipe.cookingTimeMinutes} min'),
+                      _InfoChip(icon: Icons.timer_outlined, label: '${recipe.cookingTimeMinutes} ${context.tr('minutes')}'),
                       const SizedBox(width: 12),
-                      _InfoChip(icon: Icons.restaurant_outlined, label: '${recipe.servings} servings'),
+                      _InfoChip(icon: Icons.restaurant_outlined, label: '${recipe.servings} ${context.tr('servings')}'),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.check_circle, size: 16, color: Colors.green),
-                      SizedBox(width: 6),
-                      Text('Recipe saved! Tap to view', style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500)),
+                      const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                      const SizedBox(width: 6),
+                      Text(context.tr('recipe_saved_tap'), style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ],
