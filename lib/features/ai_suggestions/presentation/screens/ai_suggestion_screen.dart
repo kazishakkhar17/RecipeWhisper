@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../providers/ai_suggestion_provider.dart';
+import '../../../recipes/domain/entities/recipe.dart';
+import '../../../recipes/presentation/screens/recipe_detail_screen.dart';
 
 class AiSuggestionScreen extends ConsumerStatefulWidget {
   const AiSuggestionScreen({super.key});
@@ -14,6 +16,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
+  final Map<int, Recipe> _messageRecipes = {}; // Store recipes by message index
 
   @override
   void dispose() {
@@ -40,9 +43,18 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
     if (message.isEmpty) return;
 
     _messageController.clear();
-    _focusNode.unfocus(); // Hide keyboard
+    _focusNode.unfocus();
     
-    await ref.read(aiChatProvider.notifier).sendMessage(message);
+    final messageIndex = ref.read(aiChatProvider).messages.length + 1; // AI response will be at this index
+    
+    final recipe = await ref.read(aiChatProvider.notifier).sendMessage(message);
+    
+    // If a recipe was returned, store it with the message index
+    if (recipe != null) {
+      setState(() {
+        _messageRecipes[messageIndex] = recipe;
+      });
+    }
     
     _scrollToBottom();
   }
@@ -105,14 +117,17 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               ref.read(aiChatProvider.notifier).clearChat();
+              setState(() {
+                _messageRecipes.clear();
+              });
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Chat cleared! Start a new conversation.'),
-                  duration: Duration(seconds: 2),
+                SnackBar(
+                  content: Text(context.tr('chat_cleared')),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
-            tooltip: 'Clear chat',
+            tooltip: context.tr('clear_chat'),
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -120,7 +135,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('ℹ️ How to use'),
+                  title: Text('ℹ️ ${context.tr('how_to_use')}'),
                   content: const SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +177,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                 ),
               );
             },
-            tooltip: 'Help',
+            tooltip: context.tr('help'),
           ),
         ],
       ),
@@ -174,9 +189,9 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  const Text(
-                    '✨ Quick Actions',
-                    style: TextStyle(
+                  Text(
+                    '✨ ${context.tr('quick_actions')}',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -208,7 +223,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                         const Text('🤖', style: TextStyle(fontSize: 60)),
                         const SizedBox(height: 16),
                         Text(
-                          'Start chatting!',
+                          context.tr('start_chatting'),
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey[600],
@@ -223,7 +238,20 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                     itemCount: chatState.messages.length,
                     itemBuilder: (context, index) {
                       final message = chatState.messages[index];
-                      return _ChatBubble(message: message);
+                      final recipe = _messageRecipes[index];
+                      
+                      return Column(
+                        children: [
+                          _ChatBubble(message: message),
+                          
+                          // Show recipe card if this message has an associated recipe
+                          if (recipe != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, bottom: 12),
+                              child: _RecipePreviewCard(recipe: recipe),
+                            ),
+                        ],
+                      );
                     },
                   ),
           ),
@@ -251,9 +279,9 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    '🤔 AI is thinking...',
-                    style: TextStyle(fontStyle: FontStyle.italic),
+                  Text(
+                    '🤔 ${context.tr('ai_thinking')}',
+                    style: const TextStyle(fontStyle: FontStyle.italic),
                   ),
                 ],
               ),
@@ -304,7 +332,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                       controller: _messageController,
                       focusNode: _focusNode,
                       decoration: InputDecoration(
-                        hintText: 'Type your message...',
+                        hintText: context.tr('type_message'),
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(25),
@@ -372,7 +400,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
 }
 
 class _ChatBubble extends StatelessWidget {
-  final dynamic message; // ChatMessage type
+  final dynamic message;
 
   const _ChatBubble({required this.message});
 
@@ -417,6 +445,186 @@ class _ChatBubble extends StatelessWidget {
             height: 1.4,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RecipePreviewCard extends StatelessWidget {
+  final Recipe recipe;
+
+  const _RecipePreviewCard({required this.recipe});
+
+  String _getCategoryEmoji(String category) {
+    final lower = category.toLowerCase();
+    if (lower.contains('breakfast')) return '🍳';
+    if (lower.contains('lunch')) return '🍱';
+    if (lower.contains('dinner')) return '🍽️';
+    if (lower.contains('dessert')) return '🍰';
+    if (lower.contains('snack')) return '🍪';
+    if (lower.contains('drink')) return '🥤';
+    return '🍲';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => RecipeDetailScreen(recipe: recipe),
+          ),
+        );
+      },
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.85,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    _getCategoryEmoji(recipe.category),
+                    style: const TextStyle(fontSize: 36),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          recipe.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          recipe.category,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Body
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    recipe.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _InfoChip(
+                        icon: Icons.timer_outlined,
+                        label: '${recipe.cookingTimeMinutes} min',
+                      ),
+                      const SizedBox(width: 12),
+                      _InfoChip(
+                        icon: Icons.restaurant_outlined,
+                        label: '${recipe.servings} servings',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Recipe saved! Tap to view details',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF6B6B).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFFFF6B6B)),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFFFF6B6B),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

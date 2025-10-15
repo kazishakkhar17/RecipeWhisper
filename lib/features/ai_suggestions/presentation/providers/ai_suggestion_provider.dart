@@ -59,8 +59,8 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     state = state.copyWith(messages: [welcomeMessage]);
   }
 
-  Future<void> sendMessage(String userMessage) async {
-    if (userMessage.trim().isEmpty) return;
+  Future<Recipe?> sendMessage(String userMessage) async {
+    if (userMessage.trim().isEmpty) return null;
 
     // Add user message
     final userChatMessage = ChatMessage(text: userMessage, isUser: true);
