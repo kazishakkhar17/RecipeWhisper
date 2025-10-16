@@ -134,6 +134,13 @@ class AppStrings {
     'stage_getting_close': '⏳ We are getting close...',
     'stage_almost_done': '🍲 Almost done...',
     'stage_ready_soon': '🍽 Ready soon...',
+
+    'previous': 'Previous',
+    'next': 'Next',
+    'stop': 'Stop',
+    'stop_cooking_confirmation': 'Are you sure you want to stop cooking?',
+    'no_instructions_available': 'No instructions available'
+
   };
 
   // Bangla Strings
@@ -271,6 +278,15 @@ class AppStrings {
     'stage_getting_close': '⏳ প্রায় শেষ...',
     'stage_almost_done': '🍲 প্রায় সম্পন্ন...',
     'stage_ready_soon': '🍽 শীঘ্রই প্রস্তুত...',
+
+    'previous': 'পূর্ববর্তী',
+    'next': 'পরবর্তী',
+    'stop': 'বন্ধ করুন',
+    'stop_cooking_confirmation': 'আপনি কি রান্না বন্ধ করতে চান?',
+    'no_instructions_available': 'কোন নির্দেশনা পাওয়া যায়নি'
+
+
+    
   };
 
   static Map<String, String> getStrings(String languageCode) {
