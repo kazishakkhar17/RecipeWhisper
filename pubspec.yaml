@@ -25,8 +25,10 @@ dependencies:
   awesome_notifications: ^0.10.1
 
   # Firebase Auth
-  firebase_core: ^2.25.0
-  firebase_auth: ^4.10.0
+  #firebase_core: ^2.25.0
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.6.0
 
   # HTTP and .env
   http: ^1.1.0 

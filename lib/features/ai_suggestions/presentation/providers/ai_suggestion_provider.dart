@@ -54,7 +54,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   void _initializeChat() {
     final welcomeMessage = ChatMessage(
       text:
-          "👋 Hi! I'm your AI recipe assistant. Just tell me what dish you want (e.g., 'spaghetti bolognese', 'chocolate chip cookies'), and I'll create a complete recipe for you instantly!\n\nYou can also ask me for cooking tips, meal suggestions, or help with meal planning. 🍳",
+          "👋 Hi! I'm your AI recipe assistant powered by Groq. Just tell me what dish you want (e.g., 'spaghetti bolognese', 'chocolate chip cookies'), and I'll instantly create a complete recipe for you!\n\nYou can also ask me for cooking tips, meal suggestions, or help with meal planning. 🍳",
       isUser: false,
     );
     state = state.copyWith(messages: [welcomeMessage]);
@@ -72,7 +72,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     );
 
     try {
-      // Get AI response with stateless context
+      // Get AI response from Groq
       final aiResponse = await _aiService.sendMessage(
         message: userMessage,
       );
@@ -89,10 +89,10 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
         await _ref.read(recipeListProvider.notifier).addRecipe(recipe);
         print('💾 Recipe added to Hive');
 
-        // Add success message (NOT the JSON)
+        // Add success message
         final successMessage = ChatMessage(
           text:
-              "✅ Perfect! I've created and saved '${recipe.name}' to your recipe collection.\n\n📋 Summary:\n• Cook time: ${recipe.cookingTimeMinutes} minutes\n• Servings: ${recipe.servings}\n• Category: ${recipe.category}\n• Ingredients: ${recipe.ingredients.length}\n• Steps: ${recipe.instructions.length}\n\nYou can find it in your Recipes tab now! 🎉\n\nWant to create another recipe? Just tell me what you'd like to make!",
+              "✅ Perfect! I've created and saved '${recipe.name}' to your recipe collection.\n\n📋 Summary:\n• Cook time: ${recipe.cookingTimeMinutes} minutes\n• Calories: ${recipe.calories}\n• Category: ${recipe.category}\n• Ingredients: ${recipe.ingredients.length}\n• Steps: ${recipe.instructions.length}\n\nYou can find it in your Recipes tab now! 🎉\n\nWant to create another recipe? Just tell me what you'd like to make!",
           isUser: false,
         );
 
@@ -103,7 +103,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
         return recipe;
       } else {
-        // Add AI message (normal conversation or fallback)
+        // Add fallback message
         final fallbackMessage = ChatMessage(
           text: aiResponse.trim().isNotEmpty
               ? aiResponse
@@ -121,13 +121,12 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     } catch (e) {
       print('❌ Error: $e');
 
-      // FIXED: Updated error message for Groq API
       final errorMessage = ChatMessage(
         text:
-            "😕 Sorry, I encountered an error while connecting to Groq API.\n\nPlease make sure:\n1. Your GROQ_API_KEY is set correctly in .env file\n2. You have an active internet connection\n3. Your API key has sufficient credits\n\nError details: ${e.toString()}",
+            "😕 Sorry, I encountered an error while connecting to Groq API.\n\nPlease make sure:\n1. Your GROQ_API_KEY is set correctly in the .env file\n2. You have an active internet connection\n3. Your API key is valid\n\nError details: ${e.toString()}",
         isUser: false,
       );
-      
+
       state = state.copyWith(
         messages: [...state.messages, errorMessage],
         isLoading: false,
@@ -175,9 +174,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       int cookingTime = int.tryParse(
               recipeData['cookingTimeMinutes'].toString().split('.').first) ??
           30;
-      int servings = int.tryParse(
-              recipeData['servings'].toString().split('.').first) ??
-          4;
+      int calories = int.tryParse(
+              recipeData['calories'].toString().split('.').first) ??
+          400;
 
       final category = recipeData['category']?.toString().trim() ?? 'Other';
 
@@ -201,7 +200,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
         ingredients: ingredients,
         instructions: instructions,
         cookingTimeMinutes: cookingTime,
-        servings: servings,
+        calories: calories,
         category: category,
       );
     } catch (e) {
@@ -216,7 +215,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   }
 }
 
-// Provider - Using Groq
+// Provider using GroqService
 final aiChatProvider =
     StateNotifierProvider<AiChatNotifier, AiChatState>((ref) {
   final groqService = GroqService();

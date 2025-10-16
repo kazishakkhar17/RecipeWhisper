@@ -35,16 +35,16 @@ class CookingTimerNotifier extends StateNotifier<CookingTimerState> {
 
     if (storedRecipeId != null) {
       currentRecipe = Recipe(
-  id: storedRecipeId,
-  name: '',
-  description: '',
-  cookingTimeMinutes: 0,
-  servings: 0,
-  category: '',
-  ingredients: [],
-  instructions: [],
-  createdAt: DateTime.now(), // ✅ required
-);
+        id: storedRecipeId,
+        name: '',
+        description: '',
+        cookingTimeMinutes: 0,
+        calories: 0,
+        category: '',
+        ingredients: [],
+        instructions: [],
+        createdAt: DateTime.now(),
+      );
 
       state = CookingTimerState(remainingSeconds: remaining, isRunning: running);
       if (running) _startTimer();
@@ -60,25 +60,24 @@ class CookingTimerNotifier extends StateNotifier<CookingTimerState> {
   }
 
   void _startTimer() {
-  _timer?.cancel();
-  _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-    if (state.remainingSeconds > 0) {
-      state = state.copyWith(remainingSeconds: state.remainingSeconds - 1);
-      _saveToHive();
-    } else {
-      // Timer finished
-      if (currentRecipe != null) {
-        // 🔔 Fire notification immediately
-        NotificationHelper.showNotification(
-          title: 'Cooking Complete!',
-          body: '${currentRecipe!.name} is ready to serve 🍽',
-        );
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (state.remainingSeconds > 0) {
+        state = state.copyWith(remainingSeconds: state.remainingSeconds - 1);
+        _saveToHive();
+      } else {
+        // Timer finished
+        if (currentRecipe != null) {
+          // 🔔 Fire notification immediately
+          NotificationHelper.showNotification(
+            title: 'Cooking Complete!',
+            body: '${currentRecipe!.name} is ready to serve 🍽️',
+          );
+        }
+        stopTimer(); // stop the timer and clear state
       }
-      stopTimer(); // stop the timer and clear state
-    }
-  });
-}
-
+    });
+  }
 
   void pauseTimer() {
     _timer?.cancel();
