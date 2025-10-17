@@ -54,44 +54,79 @@ class RecipeNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
   final RecipeRepository _repository;
 
   RecipeNotifier(this._repository) : super(const AsyncValue.loading()) {
-    _initializeDefaultRecipes().then((_) => loadRecipes());
+    _initialize();
   }
 
-  /// --- NEW: Initialize default recipes from JSON ---
-  Future<void> _initializeDefaultRecipes() async {
-    final box = await Hive.openBox('app_settings');
-    final isFirstRun = box.get('is_first_run', defaultValue: true) as bool;
+  /// Initialize and load recipes
+  Future<void> _initialize() async {
+    await _ensureDefaultRecipes();
+    await loadRecipes();
+  }
 
-    if (!isFirstRun) return;
-
+  /// ✅ BEST APPROACH: Check flag + empty database
+  /// Only loads defaults if:
+  /// 1. Defaults were never loaded before (flag is false)
+  /// 2. AND database is empty
+  Future<void> _ensureDefaultRecipes() async {
     try {
+      final box = await Hive.openBox('app_settings');
+      final defaultsLoaded = box.get('defaults_loaded', defaultValue: false) as bool;
+
+      // If defaults were already loaded once, never reload automatically
+      if (defaultsLoaded) {
+        print('✅ Defaults were loaded before, skipping');
+        return;
+      }
+
+      // Check if database is empty
+      final existingRecipes = await _repository.getAllRecipes();
+      if (existingRecipes.isNotEmpty) {
+        print('✅ Database has recipes, marking defaults as loaded');
+        await box.put('defaults_loaded', true);
+        return;
+      }
+
+      print('📦 First time setup - loading default recipes...');
+
+      // Load JSON file
       final jsonString = await rootBundle.loadString('assets/default_recipes.json');
       final List<dynamic> jsonList = jsonDecode(jsonString);
 
+      print('📝 Found ${jsonList.length} default recipes');
+
+      // Add each recipe
+      int addedCount = 0;
       for (final jsonItem in jsonList) {
-        final exists = await _repository.getRecipeById(jsonItem['id']);
-        if (exists != null) continue; // prevent duplicates
+        try {
+          // Create recipe entity
+          final recipe = Recipe(
+            id: jsonItem['id'],
+            name: jsonItem['name'],
+            description: jsonItem['description'],
+            ingredients: List<String>.from(jsonItem['ingredients']),
+            instructions: List<String>.from(jsonItem['instructions']),
+            category: jsonItem['category'] ?? 'Other',
+            cookingTimeMinutes: jsonItem['cookingTimeMinutes'] ?? 30,
+            calories: jsonItem['calories'] ?? 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
 
-        final recipe = Recipe(
-  id: jsonItem['id'],
-  name: jsonItem['name'],
-  description: jsonItem['description'],
-  ingredients: List<String>.from(jsonItem['ingredients']),
-  instructions: List<String>.from(jsonItem['instructions']),
-  category: jsonItem['category'] ?? 'Other',
-  cookingTimeMinutes: jsonItem['cookingTimeMinutes'],
-  calories: jsonItem['calories'],
-  createdAt: DateTime.now(),       // <-- Required field
-  updatedAt: DateTime.now(),       // <-- Optional, can use null if you want
-);
-
-        await _repository.addRecipe(recipe);
+          // Add to repository (no duplicate check needed on first run)
+          await _repository.addRecipe(recipe);
+          addedCount++;
+          print('✅ Added: ${recipe.name}');
+        } catch (e) {
+          print('❌ Error adding recipe ${jsonItem['id']}: $e');
+        }
       }
 
-      await box.put('is_first_run', false);
-    } catch (e) {
-      // If JSON load fails, silently continue
-      print('Failed to load default recipes: $e');
+      // Mark defaults as loaded (so they never auto-reload)
+      await box.put('defaults_loaded', true);
+      print('🎉 Successfully added $addedCount default recipes');
+    } catch (e, stack) {
+      print('❌ Failed to load default recipes: $e');
+      print('Stack trace: $stack');
     }
   }
 
@@ -100,8 +135,10 @@ class RecipeNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
     state = const AsyncValue.loading();
     try {
       final recipes = await _repository.getAllRecipes();
+      print('📚 Loaded ${recipes.length} recipes');
       state = AsyncValue.data(recipes);
     } catch (e, stack) {
+      print('❌ Error loading recipes: $e');
       state = AsyncValue.error(e, stack);
     }
   }
@@ -110,7 +147,7 @@ class RecipeNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
   Future<void> addRecipe(Recipe recipe) async {
     try {
       await _repository.addRecipe(recipe);
-      await loadRecipes(); // Reload list
+      await loadRecipes();
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -120,7 +157,7 @@ class RecipeNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
   Future<void> updateRecipe(Recipe recipe) async {
     try {
       await _repository.updateRecipe(recipe);
-      await loadRecipes(); // Reload list
+      await loadRecipes();
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -130,7 +167,7 @@ class RecipeNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
   Future<void> deleteRecipe(String id) async {
     try {
       await _repository.deleteRecipe(id);
-      await loadRecipes(); // Reload list
+      await loadRecipes();
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -142,6 +179,35 @@ class RecipeNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
       return await _repository.getRecipeById(id);
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Manual reset - User explicitly wants to restore defaults
+  /// Call this from a "Restore Default Recipes" button in settings
+  Future<void> restoreDefaults() async {
+    try {
+      print('🔄 User requested restore defaults...');
+      
+      // Clear all recipes
+      final allRecipes = await _repository.getAllRecipes();
+      for (final recipe in allRecipes) {
+        await _repository.deleteRecipe(recipe.id);
+      }
+      
+      print('🗑️ Cleared all recipes');
+      
+      // Reset the flag
+      final box = await Hive.openBox('app_settings');
+      await box.put('defaults_loaded', false);
+      
+      // Reload defaults
+      await _ensureDefaultRecipes();
+      await loadRecipes();
+      
+      print('✅ Defaults restored');
+    } catch (e) {
+      print('❌ Error restoring defaults: $e');
+      state = AsyncValue.error(e, StackTrace.current);
     }
   }
 }

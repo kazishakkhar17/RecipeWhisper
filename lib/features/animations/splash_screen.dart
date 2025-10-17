@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rive/rive.dart' hide LinearGradient;
+import 'package:firebase_auth/firebase_auth.dart'; // Add this import
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -42,14 +43,23 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     });
     
     // Navigate after delay
-    _navigateToLogin();
+    _navigateToNextScreen();
   }
 
-  Future<void> _navigateToLogin() async {
+  Future<void> _navigateToNextScreen() async {
     await Future.delayed(const Duration(seconds: 6));
     
     if (mounted) {
-      context.go('/login');
+      // Check if user is already logged in
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
+        // User is logged in, go to home
+        context.go('/home');
+      } else {
+        // User not logged in, go to login
+        context.go('/login');
+      }
     }
   }
 
