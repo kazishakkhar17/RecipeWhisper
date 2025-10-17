@@ -6,7 +6,62 @@ import 'package:intl/intl.dart';
 import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 
 import '../../../ai_suggestions/data/services/ai_services.dart';
+// Add these adapter classes to diet_widget.dart (before the enums)
 
+class GenderAdapter extends TypeAdapter<Gender> {
+  @override
+  final int typeId = 10;  // Changed from 0
+
+  @override
+  Gender read(BinaryReader reader) {
+    return Gender.values[reader.readByte()];
+  }
+
+  @override
+  void write(BinaryWriter writer, Gender obj) {
+    writer.writeByte(obj.index);
+  }
+}
+
+class ActivityLevelAdapter extends TypeAdapter<ActivityLevel> {
+  @override
+  final int typeId = 11;  // Changed from 1
+
+  @override
+  ActivityLevel read(BinaryReader reader) {
+    return ActivityLevel.values[reader.readByte()];
+  }
+
+  @override
+  void write(BinaryWriter writer, ActivityLevel obj) {
+    writer.writeByte(obj.index);
+  }
+}
+
+class CalorieEntryAdapter extends TypeAdapter<CalorieEntry> {
+  @override
+  final int typeId = 12;  // Changed from 2
+
+  @override
+  CalorieEntry read(BinaryReader reader) {
+    return CalorieEntry(
+      id: reader.readString(),
+      name: reader.readString(),
+      calories: reader.readDouble(),
+      timestamp: DateTime.parse(reader.readString()),
+      isAiPredicted: reader.readBool(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, CalorieEntry obj) {
+    writer.writeString(obj.id);
+    writer.writeString(obj.name);
+    writer.writeDouble(obj.calories);
+    writer.writeString(obj.timestamp.toIso8601String());
+    writer.writeBool(obj.isAiPredicted);
+  }
+}
 enum Gender { male, female }
 enum ActivityLevel { sedentary, light, moderate, veryActive, extraActive }
 
@@ -121,12 +176,14 @@ class _DietWidgetState extends State<DietWidget> {
             builder: (context) => const DietFullScreen(),
           ),
         ).then((_) {
+          _dailyCalories = _dietBox.get('dailyCalories', defaultValue: 2000.0);
           _loadTodayEntries();
           setState(() {});
         });
       },
       child: Card(
         elevation: 4,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -145,39 +202,53 @@ class _DietWidgetState extends State<DietWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.tr('consumed_today'),
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      Text(
-                        '${_totalCaloriesToday.toStringAsFixed(0)} ${context.tr('kcal')}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr('consumed_today'),
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
                         ),
-                      ),
-                    ],
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '${_totalCaloriesToday.toStringAsFixed(0)} ${context.tr('kcal')}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        isOverLimit ? context.tr('over_limit') : context.tr('remaining'),
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      Text(
-                        '${remaining.abs().toStringAsFixed(0)} ${context.tr('kcal')}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          isOverLimit ? context.tr('over_limit') : context.tr('remaining'),
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          textAlign: TextAlign.right,
                         ),
-                      ),
-                    ],
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${remaining.abs().toStringAsFixed(0)} ${context.tr('kcal')}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -255,10 +326,18 @@ class _DietFullScreenState extends State<DietFullScreen> {
     _dietBox = await Hive.openBox('user_diet_box');
     _calorieBox = await Hive.openBox('calorie_tracking_box');
 
-    _ageController.text = _dietBox.get('age', defaultValue: '').toString();
-    _weightController.text = _dietBox.get('weight', defaultValue: '').toString();
-    _feetController.text = _dietBox.get('heightFeet', defaultValue: '0');
-    _inchesController.text = _dietBox.get('heightInches', defaultValue: '0');
+    // Load values with proper type handling and empty string check
+    final age = _dietBox.get('age', defaultValue: '');
+    final weight = _dietBox.get('weight', defaultValue: '');
+    final feet = _dietBox.get('heightFeet', defaultValue: '');
+    final inches = _dietBox.get('heightInches', defaultValue: '');
+    
+    // Only set text if value exists and is not '0'
+    _ageController.text = age.toString().isEmpty || age.toString() == '0' ? '' : age.toString();
+    _weightController.text = weight.toString().isEmpty || weight.toString() == '0' ? '' : weight.toString();
+    _feetController.text = feet.toString().isEmpty || feet.toString() == '0' ? '' : feet.toString();
+    _inchesController.text = inches.toString().isEmpty || inches.toString() == '0' ? '' : inches.toString();
+    
     _gender = _dietBox.get('gender', defaultValue: Gender.male);
     _activityLevel = _dietBox.get('activityLevel', defaultValue: ActivityLevel.sedentary);
 
@@ -324,6 +403,7 @@ class _DietFullScreenState extends State<DietFullScreen> {
   }
 
   void _saveDietData() {
+    // Save all values as strings consistently
     _dietBox.put('age', _ageController.text);
     _dietBox.put('heightFeet', _feetController.text);
     _dietBox.put('heightInches', _inchesController.text);
@@ -544,7 +624,12 @@ class _DietFullScreenState extends State<DietFullScreen> {
                         decoration: InputDecoration(labelText: context.tr('age')),
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        onChanged: (_) => _saveDietData(),
+                        onChanged: (_) {
+                          // Debounce to avoid rapid saves
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted) _saveDietData();
+                          });
+                        },
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -555,7 +640,11 @@ class _DietFullScreenState extends State<DietFullScreen> {
                               decoration: InputDecoration(labelText: context.tr('feet')),
                               keyboardType: TextInputType.number,
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              onChanged: (_) => _saveDietData(),
+                              onChanged: (_) {
+                                Future.delayed(const Duration(milliseconds: 300), () {
+                                  if (mounted) _saveDietData();
+                                });
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -565,7 +654,11 @@ class _DietFullScreenState extends State<DietFullScreen> {
                               decoration: InputDecoration(labelText: context.tr('inches')),
                               keyboardType: TextInputType.number,
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              onChanged: (_) => _saveDietData(),
+                              onChanged: (_) {
+                                Future.delayed(const Duration(milliseconds: 300), () {
+                                  if (mounted) _saveDietData();
+                                });
+                              },
                             ),
                           ),
                         ],
@@ -576,7 +669,11 @@ class _DietFullScreenState extends State<DietFullScreen> {
                         decoration: InputDecoration(labelText: context.tr('weight_kg')),
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        onChanged: (_) => _saveDietData(),
+                        onChanged: (_) {
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted) _saveDietData();
+                          });
+                        },
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -675,58 +772,57 @@ class _DietFullScreenState extends State<DietFullScreen> {
         ),
         child: Column(
           children: [
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr('consumed'),
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '${_totalCaloriesToday.toStringAsFixed(0)} ${context.tr('kcal')}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('consumed'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${_totalCaloriesToday.toStringAsFixed(0)} ${context.tr('kcal')}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        isOverLimit ? context.tr('over') : context.tr('remaining'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '${remaining.abs().toStringAsFixed(0)} ${context.tr('kcal')}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-    ),
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            isOverLimit ? context.tr('over') : context.tr('remaining'),
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              '${remaining.abs().toStringAsFixed(0)} ${context.tr('kcal')}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
-
             const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),

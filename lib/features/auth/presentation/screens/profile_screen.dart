@@ -206,25 +206,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             // Diet Widget Preview
 // Diet Widget Preview
-Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16),
-  child: GestureDetector(
-    onTap: () => setState(() {
-      _showDietDetails = !_showDietDetails;
-      if (_showDietDetails) _showProfileDetails = false;
-    }),
-    child: Container(
-      height: 100,
-      width: double.infinity,
-      child: FittedBox(
-        fit: BoxFit.fitWidth,
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 250), // Minimum width
-          child: const DietWidget(),
-        ),
-      ),
-    ),
-  ),
+// Diet Widget Preview
+const Padding(
+  padding: EdgeInsets.symmetric(horizontal: 16),
+  child: DietWidget(),
 ),
 
             const SizedBox(height: 16),

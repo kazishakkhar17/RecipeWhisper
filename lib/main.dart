@@ -19,6 +19,9 @@ import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/recipes/domain/entities/recipe.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
+// IMPORT THE ADAPTERS FROM diet_widget.dart
+import 'features/auth/presentation/widgets/diet_widget.dart' show GenderAdapter, ActivityLevelAdapter, CalorieEntryAdapter;
+
 /// Global key for showing SnackBars globally (especially on web)
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -34,7 +37,7 @@ void main() async {
 
   // ✅ Load environment variables safely from assets
   try {
-    await dotenv.load(fileName: 'assets/.env'); // <-- minimal change here
+    await dotenv.load(fileName: 'assets/.env');
   } catch (e) {
     debugPrint("⚠️ .env file not found — continuing without it");
   }
@@ -50,6 +53,12 @@ void main() async {
 
   // ✅ Initialize Hive
   await Hive.initFlutter();
+  
+  // 🆕 REGISTER ADAPTERS - ADD THESE THREE LINES
+  Hive.registerAdapter(GenderAdapter());
+  Hive.registerAdapter(ActivityLevelAdapter());
+  Hive.registerAdapter(CalorieEntryAdapter());
+  
   Hive.registerAdapter(RecipeAdapter());
   await Hive.openBox<Recipe>('recipesBox');
   await Hive.openBox('nutritionBox');
