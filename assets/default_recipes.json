@@ -1,0 +1,102 @@
+[
+  {
+    "id": "1",
+    "name": "Spaghetti Bolognese",
+    "description": "Classic Italian pasta with rich meat sauce.",
+    "ingredients": ["Spaghetti", "Ground beef", "Tomato sauce", "Garlic", "Onion", "Olive oil", "Parmesan cheese"],
+    "instructions": ["Boil pasta until al dente", "Cook beef with garlic and onion", "Add tomato sauce and simmer", "Mix sauce with pasta", "Serve with parmesan cheese"],
+    "category": "Dinner",
+    "cookingTimeMinutes": 30,
+    "calories": 450
+  },
+  {
+    "id": "2",
+    "name": "Chicken Curry",
+    "description": "Spicy and flavorful chicken curry with coconut milk.",
+    "ingredients": ["Chicken", "Onions", "Garlic", "Ginger", "Curry powder", "Coconut milk", "Tomatoes", "Cilantro"],
+    "instructions": ["Sauté onions, garlic, and ginger", "Add chicken and brown", "Add curry powder and tomatoes", "Pour in coconut milk and simmer", "Garnish with cilantro and serve with rice"],
+    "category": "Lunch",
+    "cookingTimeMinutes": 45,
+    "calories": 520
+  },
+  {
+    "id": "3",
+    "name": "Vegetable Stir Fry",
+    "description": "Quick and healthy mixed vegetable stir fry.",
+    "ingredients": ["Broccoli", "Carrots", "Bell peppers", "Snow peas", "Soy sauce", "Garlic", "Sesame oil"],
+    "instructions": ["Heat sesame oil in wok", "Add garlic and stir fry vegetables", "Add soy sauce and cook for 2-3 minutes", "Serve hot with rice or noodles"],
+    "category": "Dinner",
+    "cookingTimeMinutes": 20,
+    "calories": 300
+  },
+  {
+    "id": "4",
+    "name": "Pancakes",
+    "description": "Fluffy breakfast pancakes served with syrup.",
+    "ingredients": ["Flour", "Milk", "Eggs", "Baking powder", "Sugar", "Butter", "Maple syrup"],
+    "instructions": ["Mix dry ingredients", "Whisk in milk and eggs", "Cook batter on a greased pan until golden", "Serve with butter and maple syrup"],
+    "category": "Breakfast",
+    "cookingTimeMinutes": 25,
+    "calories": 350
+  },
+  {
+    "id": "5",
+    "name": "Caesar Salad",
+    "description": "Crisp romaine lettuce with creamy Caesar dressing.",
+    "ingredients": ["Romaine lettuce", "Croutons", "Parmesan cheese", "Caesar dressing", "Lemon juice", "Olive oil"],
+    "instructions": ["Wash and chop lettuce", "Toss lettuce with dressing", "Top with croutons and parmesan", "Serve chilled"],
+    "category": "Salad",
+    "cookingTimeMinutes": 15,
+    "calories": 220
+  },
+  {
+    "id": "6",
+    "name": "Beef Tacos",
+    "description": "Tasty beef tacos with fresh toppings.",
+    "ingredients": ["Ground beef", "Taco shells", "Lettuce", "Tomatoes", "Cheddar cheese", "Onions", "Sour cream"],
+    "instructions": ["Cook beef with onions and seasoning", "Fill taco shells with beef", "Top with lettuce, tomatoes, cheese, and sour cream", "Serve immediately"],
+    "category": "Lunch",
+    "cookingTimeMinutes": 25,
+    "calories": 400
+  },
+  {
+    "id": "7",
+    "name": "Grilled Salmon",
+    "description": "Healthy grilled salmon with lemon and herbs.",
+    "ingredients": ["Salmon fillets", "Lemon", "Olive oil", "Garlic", "Rosemary", "Salt", "Pepper"],
+    "instructions": ["Marinate salmon with olive oil, garlic, lemon, and herbs", "Preheat grill and cook salmon for 6-8 minutes each side", "Serve hot with lemon wedges"],
+    "category": "Dinner",
+    "cookingTimeMinutes": 25,
+    "calories": 350
+  },
+  {
+    "id": "8",
+    "name": "Omelette",
+    "description": "Quick and protein-packed breakfast omelette.",
+    "ingredients": ["Eggs", "Milk", "Cheddar cheese", "Bell peppers", "Onions", "Salt", "Pepper", "Butter"],
+    "instructions": ["Whisk eggs with milk, salt, and pepper", "Melt butter in a pan", "Pour in eggs and cook until set", "Add vegetables and cheese, fold and serve"],
+    "category": "Breakfast",
+    "cookingTimeMinutes": 15,
+    "calories": 250
+  },
+  {
+    "id": "9",
+    "name": "Fruit Smoothie",
+    "description": "Refreshing smoothie with mixed fruits.",
+    "ingredients": ["Banana", "Strawberries", "Blueberries", "Yogurt", "Honey", "Ice cubes"],
+    "instructions": ["Combine all ingredients in a blender", "Blend until smooth", "Serve chilled in a glass"],
+    "category": "Snack",
+    "cookingTimeMinutes": 10,
+    "calories": 180
+  },
+  {
+    "id": "10",
+    "name": "Chocolate Brownies",
+    "description": "Rich and fudgy chocolate brownies.",
+    "ingredients": ["Dark chocolate", "Butter", "Sugar", "Eggs", "Flour", "Vanilla extract", "Salt"],
+    "instructions": ["Melt chocolate and butter", "Mix in sugar, eggs, and vanilla", "Fold in flour and salt", "Bake at 180°C for 25-30 minutes", "Cool and serve"],
+    "category": "Dessert",
+    "cookingTimeMinutes": 40,
+    "calories": 450
+  }
+]

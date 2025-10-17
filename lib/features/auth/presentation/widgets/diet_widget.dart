@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 
 import '../../../ai_suggestions/data/services/ai_services.dart';
-
-
-
-
 
 enum Gender { male, female }
 enum ActivityLevel { sedentary, light, moderate, veryActive, extraActive }
@@ -86,7 +83,6 @@ class _DietWidgetState extends State<DietWidget> {
     final lastDate = _calorieBox.get('lastActiveDate', defaultValue: '');
     
     if (lastDate != today) {
-      // New day detected - keep old data but start fresh tracking
       _calorieBox.put('lastActiveDate', today);
     }
   }
@@ -125,16 +121,15 @@ class _DietWidgetState extends State<DietWidget> {
             builder: (context) => const DietFullScreen(),
           ),
         ).then((_) {
-          // Refresh data when coming back
           _loadTodayEntries();
           setState(() {});
         });
       },
       child: Card(
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: isOverLimit
@@ -143,7 +138,7 @@ class _DietWidgetState extends State<DietWidget> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(15),
           ),
           child: Column(
             children: [
@@ -153,15 +148,15 @@ class _DietWidgetState extends State<DietWidget> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Consumed Today',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      Text(
+                        context.tr('consumed_today'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                       Text(
-                        '${_totalCaloriesToday.toStringAsFixed(0)} kcal',
+                        '${_totalCaloriesToday.toStringAsFixed(0)} ${context.tr('kcal')}',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 32,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -171,14 +166,14 @@ class _DietWidgetState extends State<DietWidget> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        isOverLimit ? 'Over Limit' : 'Remaining',
-                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        isOverLimit ? context.tr('over_limit') : context.tr('remaining'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                       Text(
-                        '${remaining.abs().toStringAsFixed(0)} kcal',
+                        '${remaining.abs().toStringAsFixed(0)} ${context.tr('kcal')}',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -186,25 +181,26 @@ class _DietWidgetState extends State<DietWidget> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'View Diet Profile',
-                      style: TextStyle(
+                      context.tr('view_diet_profile'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
                   ],
                 ),
               ),
@@ -225,19 +221,15 @@ class DietFullScreen extends StatefulWidget {
 }
 
 class _DietFullScreenState extends State<DietFullScreen> {
-  // Diet Profile Controllers
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _feetController = TextEditingController();
   final TextEditingController _inchesController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
-
-  // Calorie Tracker Controllers
   final TextEditingController _foodNameController = TextEditingController();
   final TextEditingController _caloriesController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
 
   late GroqService _aiService;
-
 
   Gender? _gender;
   ActivityLevel? _activityLevel;
@@ -252,24 +244,21 @@ class _DietFullScreenState extends State<DietFullScreen> {
 
   List<CalorieEntry> _todayEntries = [];
 
-@override
-void initState() {
-  super.initState();
-  _aiService = GroqService(); // initialize here
-  _initializeHive();
-}
-
+  @override
+  void initState() {
+    super.initState();
+    _aiService = GroqService();
+    _initializeHive();
+  }
 
   Future<void> _initializeHive() async {
     _dietBox = await Hive.openBox('user_diet_box');
     _calorieBox = await Hive.openBox('calorie_tracking_box');
 
-    // Load diet profile data
     _ageController.text = _dietBox.get('age', defaultValue: '').toString();
     _weightController.text = _dietBox.get('weight', defaultValue: '').toString();
-_feetController.text = _dietBox.get('heightFeet', defaultValue: '0');
-_inchesController.text = _dietBox.get('heightInches', defaultValue: '0');
-
+    _feetController.text = _dietBox.get('heightFeet', defaultValue: '0');
+    _inchesController.text = _dietBox.get('heightInches', defaultValue: '0');
     _gender = _dietBox.get('gender', defaultValue: Gender.male);
     _activityLevel = _dietBox.get('activityLevel', defaultValue: ActivityLevel.sedentary);
 
@@ -350,7 +339,7 @@ _inchesController.text = _dietBox.get('heightInches', defaultValue: '0');
     final feet = _feetController.text;
     final inches = _inchesController.text;
     if (feet.isEmpty && inches.isEmpty) return '--';
-    return '${feet.isEmpty ? "0" : feet} ft ${inches.isEmpty ? "0" : inches} in';
+    return '${feet.isEmpty ? "0" : feet} ${context.tr('ft')} ${inches.isEmpty ? "0" : inches} ${context.tr('in')}';
   }
 
   double get _totalCaloriesToday {
@@ -368,13 +357,13 @@ _inchesController.text = _dietBox.get('heightInches', defaultValue: '0');
 
   Future<void> _addDirectCalorieEntry() async {
     if (_foodNameController.text.isEmpty || _caloriesController.text.isEmpty) {
-      _showSnackBar('Please enter food name and calories');
+      _showSnackBar(context.tr('enter_food_and_calories'));
       return;
     }
 
     final calories = double.tryParse(_caloriesController.text);
     if (calories == null || calories <= 0) {
-      _showSnackBar('Please enter a valid calorie value');
+      _showSnackBar(context.tr('enter_valid_calories'));
       return;
     }
 
@@ -395,81 +384,51 @@ _inchesController.text = _dietBox.get('heightInches', defaultValue: '0');
     _foodNameController.clear();
     _caloriesController.clear();
     
-    _showSnackBar('Added ${calories.toStringAsFixed(0)} kcal');
+    _showSnackBar('${context.tr('added')} ${calories.toStringAsFixed(0)} ${context.tr('kcal')}');
   }
 
-Future<void> _addAIPredictedEntry() async {
-  if (_foodNameController.text.isEmpty || _amountController.text.isEmpty) {
-    _showSnackBar('Please enter food name and amount');
-    return;
-  }
-
-  setState(() => _isLoadingAI = true);
-
-  try {
-    // Build prompt for AI
-    final prompt =
-        "Estimate calories for ${_amountController.text} of ${_foodNameController.text}. Return only a number.";
-
-    // Call your existing GroqService
-    final aiResponse = await _aiService.sendMessage(message: prompt);
-
-    // Extract number from AI response
-    final predictedCalories = double.tryParse(
-          RegExp(r'[\d.]+').firstMatch(aiResponse)?.group(0) ?? '',
-        ) ??
-        150.0; // fallback
-
-    final entry = CalorieEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: '${_foodNameController.text} (${_amountController.text})',
-      calories: predictedCalories,
-      timestamp: DateTime.now(),
-      isAiPredicted: true,
-    );
-
-    setState(() {
-      _todayEntries.add(entry);
-      _isLoadingAI = false;
-    });
-
-    await _saveTodayEntries();
-
-    _foodNameController.clear();
-    _amountController.clear();
-
-    _showSnackBar('AI predicted ${predictedCalories.toStringAsFixed(0)} kcal');
-  } catch (e) {
-    setState(() => _isLoadingAI = false);
-    _showSnackBar('❌ Error predicting calories: $e');
-  }
-}
-
-
-  double _mockAIPrediction(String foodName, String amount) {
-    final baseCalories = {
-      'rice': 130.0,
-      'chicken': 165.0,
-      'egg': 78.0,
-      'bread': 265.0,
-      'apple': 52.0,
-      'banana': 89.0,
-      'pasta': 131.0,
-      'pizza': 266.0,
-      'burger': 295.0,
-      'salad': 33.0,
-    };
-
-    final food = foodName.toLowerCase();
-    final multiplier = double.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 100;
-    
-    for (var key in baseCalories.keys) {
-      if (food.contains(key)) {
-        return (baseCalories[key]! * multiplier) / 100;
-      }
+  Future<void> _addAIPredictedEntry() async {
+    if (_foodNameController.text.isEmpty || _amountController.text.isEmpty) {
+      _showSnackBar(context.tr('enter_food_and_amount'));
+      return;
     }
-    
-    return 150.0;
+
+    setState(() => _isLoadingAI = true);
+
+    try {
+      final prompt =
+          "Estimate calories for ${_amountController.text} of ${_foodNameController.text}. Return only a number.";
+
+      final aiResponse = await _aiService.sendMessage(message: prompt);
+
+      final predictedCalories = double.tryParse(
+            RegExp(r'[\d.]+').firstMatch(aiResponse)?.group(0) ?? '',
+          ) ??
+          150.0;
+
+      final entry = CalorieEntry(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: '${_foodNameController.text} (${_amountController.text})',
+        calories: predictedCalories,
+        timestamp: DateTime.now(),
+        isAiPredicted: true,
+      );
+
+      setState(() {
+        _todayEntries.add(entry);
+        _isLoadingAI = false;
+      });
+
+      await _saveTodayEntries();
+
+      _foodNameController.clear();
+      _amountController.clear();
+
+      _showSnackBar('${context.tr('ai_predicted')} ${predictedCalories.toStringAsFixed(0)} ${context.tr('kcal')}');
+    } catch (e) {
+      setState(() => _isLoadingAI = false);
+      _showSnackBar('❌ ${context.tr('error_predicting')}: $e');
+    }
   }
 
   void _deleteEntry(String id) {
@@ -477,7 +436,7 @@ Future<void> _addAIPredictedEntry() async {
       _todayEntries.removeWhere((entry) => entry.id == id);
     });
     _saveTodayEntries();
-    _showSnackBar('Entry deleted');
+    _showSnackBar(context.tr('entry_deleted'));
   }
 
   void _showSnackBar(String message) {
@@ -490,33 +449,31 @@ Future<void> _addAIPredictedEntry() async {
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Diet & Calorie Tracker')),
+        appBar: AppBar(title: Text(context.tr('diet_calorie_tracker'))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Diet & Calorie Tracker'),
+        title: Text(context.tr('diet_calorie_tracker')),
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Progress Card
             _buildProgressCard(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Quick Stats Row
             Row(
               children: [
                 Expanded(
                   child: _buildQuickStatCard(
                     color: Colors.blue,
                     icon: Icons.height,
-                    title: 'Height',
+                    title: context.tr('height'),
                     value: _formatHeight(),
                   ),
                 ),
@@ -525,7 +482,7 @@ Future<void> _addAIPredictedEntry() async {
                   child: _buildQuickStatCard(
                     color: Colors.orange,
                     icon: Icons.local_fire_department,
-                    title: 'Daily Goal',
+                    title: context.tr('daily_goal'),
                     value: _dailyCalories > 0
                         ? '${_dailyCalories.toStringAsFixed(0)}'
                         : '--',
@@ -533,103 +490,98 @@ Future<void> _addAIPredictedEntry() async {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Edit Profile Button
             if (!_showProfileForm)
-              OutlinedButton.icon(
-                onPressed: () => setState(() => _showProfileForm = true),
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit Diet Profile'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFFF6B6B),
-                  side: const BorderSide(color: Color(0xFFFF6B6B)),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () => setState(() => _showProfileForm = true),
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: Text(context.tr('edit_diet_profile')),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF6B6B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
 
-            // Profile Form (Collapsible)
             if (_showProfileForm) ...[
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    const Text(
-      'Diet Profile',
-      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    ),
-    TextButton(
-      onPressed: () => setState(() => _showProfileForm = false),
-      style: TextButton.styleFrom(
-        backgroundColor: const Color(0xFFFF6B6B),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
-    ),
-  ],
-),
-
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            context.tr('diet_profile'),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          TextButton(
+                            onPressed: () => setState(() => _showProfileForm = false),
+                            style: TextButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF6B6B),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text(context.tr('save'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _ageController,
-                        decoration: const InputDecoration(labelText: 'Age'),
+                        decoration: InputDecoration(labelText: context.tr('age')),
                         keyboardType: TextInputType.number,
-                        inputFormatters: [
-      FilteringTextInputFormatter.digitsOnly, // only integers allowed
-    ],
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         onChanged: (_) => _saveDietData(),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
-  child: TextField(
-    controller: _feetController,
-    decoration: const InputDecoration(labelText: 'Feet'),
-    keyboardType: TextInputType.number,
-    inputFormatters: [
-      FilteringTextInputFormatter.digitsOnly, // only integers allowed
-    ],
-    onChanged: (_) => _saveDietData(),
-  ),
-),
-const SizedBox(width: 12),
-Expanded(
-  child: TextField(
-    controller: _inchesController,
-    decoration: const InputDecoration(labelText: 'Inches'),
-    keyboardType: TextInputType.number,
-    inputFormatters: [
-      FilteringTextInputFormatter.digitsOnly, // only integers allowed
-    ],
-    onChanged: (_) => _saveDietData(),
-  ),
-),
-
+                            child: TextField(
+                              controller: _feetController,
+                              decoration: InputDecoration(labelText: context.tr('feet')),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              onChanged: (_) => _saveDietData(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _inchesController,
+                              decoration: InputDecoration(labelText: context.tr('inches')),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              onChanged: (_) => _saveDietData(),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _weightController,
-                        decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                        decoration: InputDecoration(labelText: context.tr('weight_kg')),
                         keyboardType: TextInputType.number,
-                            inputFormatters: [
-      FilteringTextInputFormatter.digitsOnly, // only integers allowed
-    ],
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         onChanged: (_) => _saveDietData(),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Text('Gender:'),
+                          Text(context.tr('gender')),
                           Radio<Gender>(
                             value: Gender.male,
                             groupValue: _gender,
@@ -638,7 +590,7 @@ Expanded(
                               _saveDietData();
                             },
                           ),
-                          const Text('Male'),
+                          Text(context.tr('male')),
                           Radio<Gender>(
                             value: Gender.female,
                             groupValue: _gender,
@@ -647,14 +599,14 @@ Expanded(
                               _saveDietData();
                             },
                           ),
-                          const Text('Female'),
+                          Text(context.tr('female')),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Activity Level:'),
+                          Text(context.tr('activity_level')),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
@@ -665,7 +617,7 @@ Expanded(
                                       RegExp(r'([A-Z])'), (m) => ' ${m[0]}')
                                   .trim();
                               return ChoiceChip(
-                                label: Text(label),
+                                label: Text(label, style: const TextStyle(fontSize: 12)),
                                 selected: _activityLevel == level,
                                 onSelected: (selected) {
                                   setState(() => _activityLevel = level);
@@ -680,25 +632,21 @@ Expanded(
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
 
-            // Calorie Tracker Section
-            const Text(
-              'Track Today\'s Meals',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Text(
+              context.tr('track_todays_meals'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
 
-            // Input Method Toggle
             _buildInputMethodToggle(),
             const SizedBox(height: 12),
 
-            // Input Form
             _buildInputForm(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Today's Entries
             _buildTodayEntries(),
           ],
         ),
@@ -712,9 +660,9 @@ Expanded(
 
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isOverLimit
@@ -723,55 +671,68 @@ Expanded(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Consumed',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    Text(
-                      '${_totalCaloriesToday.toStringAsFixed(0)} kcal',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      isOverLimit ? 'Over' : 'Remaining',
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    Text(
-                      '${remaining.abs().toStringAsFixed(0)} kcal',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('consumed'),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${_totalCaloriesToday.toStringAsFixed(0)} ${context.tr('kcal')}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 16),
+          ),
+        ],
+      ),
+    ),
+    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            isOverLimit ? context.tr('over') : context.tr('remaining'),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${remaining.abs().toStringAsFixed(0)} ${context.tr('kcal')}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
+
+            const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
                 value: _progressPercentage,
-                minHeight: 12,
+                minHeight: 10,
                 backgroundColor: Colors.white.withOpacity(0.3),
                 valueColor: AlwaysStoppedAnimation(
                   isOverLimit ? Colors.red.shade900 : Colors.white,
@@ -794,7 +755,7 @@ Expanded(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 2,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
           gradient: LinearGradient(
@@ -805,18 +766,18 @@ Expanded(
         ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(height: 8),
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(height: 6),
             Text(
               title,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
             ),
             const SizedBox(height: 4),
             Text(
               value,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -830,7 +791,7 @@ Expanded(
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
@@ -839,12 +800,12 @@ Expanded(
             child: GestureDetector(
               onTap: () => setState(() => _useDirectCalories = true),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _useDirectCalories
                       ? const Color(0xFFFF6B6B)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -852,15 +813,15 @@ Expanded(
                     Icon(
                       Icons.calculate,
                       color: _useDirectCalories ? Colors.white : Colors.grey,
-                      size: 20,
+                      size: 18,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
-                      'Know Calories',
+                      context.tr('know_calories'),
                       style: TextStyle(
                         color: _useDirectCalories ? Colors.white : Colors.grey,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -872,12 +833,12 @@ Expanded(
             child: GestureDetector(
               onTap: () => setState(() => _useDirectCalories = false),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: !_useDirectCalories
                       ? const Color(0xFFFF6B6B)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -885,15 +846,15 @@ Expanded(
                     Icon(
                       Icons.auto_awesome,
                       color: !_useDirectCalories ? Colors.white : Colors.grey,
-                      size: 20,
+                      size: 18,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
-                      'AI Predict',
+                      context.tr('ai_predict'),
                       style: TextStyle(
                         color: !_useDirectCalories ? Colors.white : Colors.grey,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -917,8 +878,8 @@ Expanded(
             TextField(
               controller: _foodNameController,
               decoration: InputDecoration(
-                labelText: 'Food Name',
-                prefixIcon: const Icon(Icons.restaurant),
+                labelText: context.tr('food_name'),
+                prefixIcon: const Icon(Icons.restaurant, size: 20),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -930,8 +891,8 @@ Expanded(
                 controller: _caloriesController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Calories (kcal)',
-                  prefixIcon: const Icon(Icons.local_fire_department),
+                  labelText: context.tr('calories_kcal'),
+                  prefixIcon: const Icon(Icons.local_fire_department, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -941,14 +902,14 @@ Expanded(
               TextField(
                 controller: _amountController,
                 decoration: InputDecoration(
-                  labelText: 'Amount (e.g., 100g, 1 cup)',
-                  prefixIcon: const Icon(Icons.scale),
+                  labelText: context.tr('amount_eg'),
+                  prefixIcon: const Icon(Icons.scale, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -959,19 +920,19 @@ Expanded(
                         : _addAIPredictedEntry),
                 icon: _isLoadingAI
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.add),
-                label: Text(_isLoadingAI ? 'Predicting...' : 'Add Entry'),
+                    : const Icon(Icons.add, size: 20),
+                label: Text(_isLoadingAI ? context.tr('predicting') : context.tr('add_entry')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B6B),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -990,15 +951,15 @@ Expanded(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           child: Center(
             child: Column(
               children: [
-                Icon(Icons.restaurant_menu, size: 48, color: Colors.grey.shade400),
+                Icon(Icons.restaurant_menu, size: 40, color: Colors.grey.shade400),
                 const SizedBox(height: 8),
                 Text(
-                  'No meals logged today',
-                  style: TextStyle(color: Colors.grey.shade600),
+                  context.tr('no_meals_logged'),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
               ],
             ),
@@ -1011,9 +972,9 @@ Expanded(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Today\'s Meals (${_todayEntries.length})',
+          '${context.tr('todays_meals')} (${_todayEntries.length})',
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1027,10 +988,12 @@ Expanded(
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 leading: CircleAvatar(
+                  radius: 18,
                   backgroundColor: entry.isAiPredicted
                       ? Colors.purple.shade100
                       : Colors.blue.shade100,
@@ -1039,38 +1002,40 @@ Expanded(
                     color: entry.isAiPredicted
                         ? Colors.purple.shade700
                         : Colors.blue.shade700,
-                    size: 20,
+                    size: 18,
                   ),
                 ),
                 title: Text(
                   entry.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 subtitle: Text(
                   DateFormat('h:mm a').format(entry.timestamp),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFF6B6B).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${entry.calories.toStringAsFixed(0)} kcal',
+                        '${entry.calories.toStringAsFixed(0)} ${context.tr('kcal')}',
                         style: const TextStyle(
                           color: Color(0xFFFF6B6B),
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                       onPressed: () => _showDeleteDialog(entry.id, entry.name),
                     ),
                   ],
@@ -1087,19 +1052,19 @@ Expanded(
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Entry'),
-        content: Text('Remove "$name" from today\'s log?'),
+        title: Text(context.tr('delete_entry')),
+        content: Text('${context.tr('remove_entry')} "$name"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.tr('cancel')),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteEntry(id);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(context.tr('delete'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

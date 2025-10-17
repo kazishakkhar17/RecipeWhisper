@@ -106,7 +106,7 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
       body: Column(
         children: [
           _buildTimerSection(remainingSeconds, progress, timerState.isRunning, timerColor, statusMessage, isFinished, isDark),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           if (isFinished)
             _buildCompletionCard(isDark)
@@ -138,15 +138,13 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                   child: Text(
                     context.tr('no_instructions_available'),
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       color: isDark ? Colors.white60 : Colors.grey.shade600,
                     ),
                   ),
                 ),
               ),
 
-            const SizedBox(height: 8),
-            if (totalSteps > 0) _buildNavigationControls(totalSteps),
             const SizedBox(height: 8),
           ],
 
@@ -169,8 +167,8 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
         return Transform.scale(
           scale: pulseScale,
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -180,49 +178,49 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
                   color: timerColor.withOpacity(0.4),
-                  blurRadius: 25,
-                  spreadRadius: isRunning ? 5 : 2,
-                  offset: const Offset(0, 10),
+                  blurRadius: 20,
+                  spreadRadius: isRunning ? 4 : 2,
+                  offset: const Offset(0, 8),
                 ),
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.25),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     statusMessage,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      letterSpacing: 1,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Stack(
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 150,
-                      height: 150,
+                      width: 120,
+                      height: 120,
                       child: CircularProgressIndicator(
                         value: progress.clamp(0.0, 1.0),
-                        strokeWidth: 10,
+                        strokeWidth: 8,
                         backgroundColor: Colors.white.withOpacity(0.25),
                         valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                         strokeCap: StrokeCap.round,
@@ -232,7 +230,7 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
@@ -241,11 +239,11 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                             isFinished 
                                 ? Icons.check_circle 
                                 : (isRunning ? Icons.timer : Icons.timer_off),
-                            size: 28,
+                            size: 24,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         ShaderMask(
                           shaderCallback: (bounds) {
                             return const LinearGradient(
@@ -257,23 +255,23 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                           child: Text(
                             '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
                             style: const TextStyle(
-                              fontSize: 42,
+                              fontSize: 36,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
-                              letterSpacing: 3,
+                              letterSpacing: 2,
                               height: 1,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           isFinished 
                               ? context.tr('done')
-                              : (isRunning ? 'remaining' : context.tr('pause')),
+                              : (isRunning ? context.tr('cooking') : context.tr('pause')),
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 11,
                             color: Colors.white.withOpacity(0.85),
-                            letterSpacing: 1.5,
+                            letterSpacing: 1,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -281,14 +279,14 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    height: 10,
+                    height: 8,
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: LinearProgressIndicator(
                       value: progress.clamp(0.0, 1.0),
@@ -308,20 +306,20 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
   Widget _buildCompletionCard(bool isDark) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.all(20),
+        margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF4CAF50).withOpacity(0.4),
-              blurRadius: 30,
-              spreadRadius: 5,
-              offset: const Offset(0, 10),
+              blurRadius: 24,
+              spreadRadius: 4,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -329,57 +327,57 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.check_circle,
-                size: 80,
+                size: 64,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 24),
             Text(
               '🎉 ${context.tr('finish')} 🎉',
               style: const TextStyle(
-                fontSize: 42,
+                fontSize: 36,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
-                letterSpacing: 2,
+                letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Your dish is ready to serve!',
-              style: TextStyle(
-                fontSize: 20,
+            const SizedBox(height: 12),
+            Text(
+              context.tr('dish_ready'),
+              style: const TextStyle(
+                fontSize: 16,
                 color: Colors.white,
-                letterSpacing: 1,
+                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 32),
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                icon: const Icon(Icons.restaurant, size: 28),
+                icon: const Icon(Icons.restaurant, size: 24),
                 label: Text(
                   context.tr('done'),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF4CAF50),
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  elevation: 8,
+                  elevation: 6,
                 ),
               ),
             ),
@@ -391,23 +389,22 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
 
   Widget _buildStepIndicator(int totalSteps, bool isDark) {
     return Container(
-      height: 60,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: 54,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: totalSteps,
         itemBuilder: (context, index) {
           final isActive = index == _currentStep;
           final isPast = index < _currentStep;
-          final isFuture = index > _currentStep;
 
           return GestureDetector(
             onTap: () => _goToStep(index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOutCubic,
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              width: isActive ? 70 : 50,
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              width: isActive ? 64 : 48,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isPast
@@ -420,14 +417,14 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: isActive
                     ? [
                         BoxShadow(
                           color: const Color(0xFFFF6B6B).withOpacity(0.4),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 4),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 3),
                         ),
                       ]
                     : [],
@@ -442,15 +439,15 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                             ? Icons.restaurant
                             : Icons.circle_outlined,
                     color: Colors.white,
-                    size: isActive ? 28 : 22,
+                    size: isActive ? 24 : 20,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     '${index + 1}',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: isActive ? 16 : 14,
+                      fontSize: isActive ? 14 : 12,
                     ),
                   ),
                 ],
@@ -464,32 +461,32 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
 
   Widget _buildStepCard(String instruction, int index, int totalSteps, bool isDark) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? Colors.grey.shade900 : Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(25),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFFFF6B6B).withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
@@ -498,8 +495,8 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFFFF6B6B).withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
@@ -509,29 +506,29 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 22,
+                            fontSize: 18,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${context.tr('step')} ${index + 1} of $totalSteps',
+                            '${context.tr('step')} ${index + 1} ${context.tr('of')} $totalSteps',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12,
                               color: isDark ? Colors.white60 : Colors.grey,
                               fontWeight: FontWeight.w500,
-                              letterSpacing: 0.5,
+                              letterSpacing: 0.3,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Container(
-                            height: 4,
-                            width: 60,
+                            height: 3,
+                            width: 50,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
@@ -544,28 +541,28 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: isDark 
-                            ? const Color(0xFFFF6B6B).withOpacity(0.15)
-                            : const Color(0xFFFF6B6B).withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: const Color(0xFFFF6B6B).withOpacity(0.2),
-                          width: 2,
-                        ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark 
+                          ? const Color(0xFFFF6B6B).withOpacity(0.15)
+                          : const Color(0xFFFF6B6B).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFFFF6B6B).withOpacity(0.2),
+                        width: 1.5,
                       ),
+                    ),
+                    child: SingleChildScrollView(
                       child: Text(
-                        instruction.isNotEmpty ? instruction : 'No instruction provided',
+                        instruction.isNotEmpty ? instruction : context.tr('no_instruction'),
                         style: TextStyle(
-                          fontSize: 18,
-                          height: 1.6,
-                          letterSpacing: 0.3,
+                          fontSize: 15,
+                          height: 1.5,
+                          letterSpacing: 0.2,
                           fontWeight: FontWeight.w500,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
@@ -573,15 +570,15 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         child: LinearProgressIndicator(
                           value: (index + 1) / totalSteps,
-                          minHeight: 8,
+                          minHeight: 6,
                           backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Color(0xFFFF6B6B),
@@ -589,11 +586,11 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Text(
                       '${((index + 1) / totalSteps * 100).toInt()}%',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white70 : Colors.grey.shade700,
                       ),
@@ -608,59 +605,9 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
     );
   }
 
-  Widget _buildNavigationControls(int totalSteps) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _currentStep > 0
-                  ? () => _goToStep(_currentStep - 1)
-                  : null,
-              icon: const Icon(Icons.arrow_back),
-              label: Text(context.tr('previous')),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                backgroundColor: Colors.grey.shade300,
-                foregroundColor: Colors.grey.shade800,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                disabledBackgroundColor: Colors.grey.shade200,
-                disabledForegroundColor: Colors.grey.shade400,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _currentStep < totalSteps - 1
-                  ? () => _goToStep(_currentStep + 1)
-                  : null,
-              icon: const Icon(Icons.arrow_forward),
-              label: Text(context.tr('next')),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                backgroundColor: const Color(0xFFFF6B6B),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                disabledBackgroundColor: Colors.grey.shade200,
-                disabledForegroundColor: Colors.grey.shade400,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTimerControls(dynamic timerState, dynamic timerNotifier) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Expanded(
@@ -675,31 +622,31 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
               },
               icon: Icon(
                 timerState.isRunning ? Icons.pause : Icons.play_arrow,
-                size: 28,
+                size: 24,
               ),
               label: Text(
                 timerState.isRunning
                     ? context.tr('pause')
                     : context.tr('resume'),
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 backgroundColor: timerState.isRunning
                     ? const Color(0xFFFFA726)
                     : const Color(0xFF4CAF50),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 6,
+                elevation: 4,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
@@ -728,16 +675,16 @@ class _CookingTimerScreenState extends ConsumerState<CookingTimerScreen>
                   ),
                 );
               },
-              icon: const Icon(Icons.stop),
+              icon: const Icon(Icons.stop, size: 20),
               label: Text(context.tr('stop')),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 backgroundColor: Colors.red.shade400,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 6,
+                elevation: 4,
               ),
             ),
           ),

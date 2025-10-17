@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 
 import '../widgets/diet_widget.dart';
 import '../widgets/settings_widget.dart';
@@ -56,7 +57,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (lastName.isNotEmpty) return lastName;
 
     final user = _auth.currentUser;
-    return user?.displayName ?? 'User';
+    return user?.displayName ?? context.tr('user');
   }
 
   String _getInitials() {
@@ -82,13 +83,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(context.tr('profile'))),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Profile Card
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: GestureDetector(
                 onTap: () => setState(() {
                   _showProfileDetails = !_showProfileDetails;
@@ -96,14 +97,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 }),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(15),
                     boxShadow: [
                       BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
                     ],
@@ -111,23 +112,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     children: [
                       CircleAvatar(
-                        radius: 50,
+                        radius: 40,
                         backgroundColor: Colors.white,
                         child: Text(
                           _getInitials(),
-                          style: const TextStyle(fontSize: 42, fontWeight: FontWeight.bold, color: Color(0xFFFF6B6B)),
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFFF6B6B)),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         _getDisplayName(),
-                        style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
-                      Text(user?.email ?? 'No email', style: const TextStyle(color: Colors.white70, fontSize: 14)),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
+                      Text(user?.email ?? context.tr('no_email'), style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                      const SizedBox(height: 10),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
@@ -135,13 +136,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(_showProfileDetails ? 'Hide Details' : 'View Profile',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                            const SizedBox(width: 8),
+                            Text(_showProfileDetails ? context.tr('hide_details') : context.tr('view_profile'),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                            const SizedBox(width: 6),
                             Icon(
                               _showProfileDetails ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                               color: Colors.white,
-                              size: 20,
+                              size: 18,
                             ),
                           ],
                         ),
@@ -155,7 +156,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // Profile Details
             if (_showProfileDetails)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Card(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   elevation: 2,
@@ -164,24 +165,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 16),
+                        Text(context.tr('personal_information'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
                         TextField(
                           controller: _firstNameController,
-                          decoration: InputDecoration(labelText: 'First Name', prefixIcon: const Icon(Icons.person_outline), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                          decoration: InputDecoration(
+                            labelText: context.tr('first_name'), 
+                            prefixIcon: const Icon(Icons.person_outline, size: 20), 
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
+                          ),
                           onChanged: (_) => _saveProfileData(),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _lastNameController,
-                          decoration: InputDecoration(labelText: 'Last Name', prefixIcon: const Icon(Icons.person_outline), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                          decoration: InputDecoration(
+                            labelText: context.tr('last_name'), 
+                            prefixIcon: const Icon(Icons.person_outline, size: 20), 
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
+                          ),
                           onChanged: (_) => _saveProfileData(),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           enabled: false,
-                          controller: TextEditingController(text: user?.email ?? 'No email'),
-                          decoration: InputDecoration(labelText: 'Email', prefixIcon: const Icon(Icons.email_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                          controller: TextEditingController(text: user?.email ?? context.tr('no_email')),
+                          decoration: InputDecoration(
+                            labelText: context.tr('email'), 
+                            prefixIcon: const Icon(Icons.email_outlined, size: 20), 
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
+                          ),
                         ),
                       ],
                     ),
@@ -189,26 +202,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Diet Widget Preview
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GestureDetector(
-                onTap: () => setState(() {
-                  _showDietDetails = !_showDietDetails;
-                  if (_showDietDetails) _showProfileDetails = false;
-                }),
-                child: DietWidget(),
-              ),
-            ),
+// Diet Widget Preview
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  child: GestureDetector(
+    onTap: () => setState(() {
+      _showDietDetails = !_showDietDetails;
+      if (_showDietDetails) _showProfileDetails = false;
+    }),
+    child: Container(
+      height: 100,
+      width: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.fitWidth,
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 250), // Minimum width
+          child: const DietWidget(),
+        ),
+      ),
+    ),
+  ),
+),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Settings
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: SettingsWidget()),
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: SettingsWidget()),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
           ],
         ),
       ),
