@@ -1,7 +1,7 @@
 import 'package:bli_flutter_recipewhisper/features/auth/presentation/screens/profile_screen.dart';
 import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 import 'package:bli_flutter_recipewhisper/features/reminders/presentation/screens/reminder_screen.dart';
-import 'package:bli_flutter_recipewhisper/features/ai_suggestions/presentation/screens/ai_suggestion_screen.dart'; // ✅ ADDED
+import 'package:bli_flutter_recipewhisper/features/ai_suggestions/presentation/screens/ai_suggestion_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> get _screens => [
     const HomeContent(),
     const RecipesScreen(),
-    const AiSuggestionScreen(), // ✅ CHANGED from AiScreen()
+    const AiSuggestionScreen(),
     const ProfileScreen(),
     const ReminderScreen(),
   ];
@@ -135,18 +135,25 @@ class HomeContent extends ConsumerWidget {
           ),
         ),
 
-        // Search bar
+        // Search bar - FIXED for dark mode
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           child: TextField(
             onChanged: (value) {
               ref.read(recipeSearchProvider.notifier).state = value;
             },
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+            ),
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
               hintText: context.tr('search_recipes'),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[800]
+                  : Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,
@@ -251,19 +258,28 @@ class RecipesScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          // Search bar
+          // Search bar - FIXED for dark mode
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
               onChanged: (value) {
                 ref.read(recipeSearchProvider.notifier).state = value;
               },
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
+              ),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: context.tr('search_recipes'),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
+                filled: true,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[800]
+                    : Colors.grey[50],
               ),
             ),
           ),
