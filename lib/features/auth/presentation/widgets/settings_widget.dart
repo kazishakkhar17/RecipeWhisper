@@ -11,7 +11,9 @@ class SettingsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
-    final isEnglish = ref.watch(localeProvider).languageCode == 'en';
+    final locale = ref.watch(localeProvider);
+    final isEnglish = locale.languageCode == 'en';
+    final currentLanguageName = isEnglish ? 'English' : 'বাংলা';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -65,7 +67,7 @@ class SettingsWidget extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
-          // Language Toggle
+          // Language Toggle with Active Language Label
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -93,8 +95,26 @@ class SettingsWidget extends ConsumerWidget {
                       child: const Icon(Icons.language, color: Color(0xFFFF6B6B)),
                     ),
                     const SizedBox(width: 12),
-                    Text(context.tr('language'),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isEnglish ? 'Language' : 'ভাষা',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          currentLanguageName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white60
+                                : Colors.grey[600],
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 Switch(

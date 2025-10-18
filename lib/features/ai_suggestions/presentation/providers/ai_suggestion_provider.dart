@@ -54,7 +54,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   void _initializeChat() {
     final welcomeMessage = ChatMessage(
       text:
-          "👋 Hi! I'm your AI recipe assistant RecipeWhiser. Just tell me what dish you want (e.g., 'spaghetti bolognese', 'chocolate chip cookies'), and I'll instantly create a complete recipe for you!\n\nYou can also ask me for cooking tips, meal suggestions, or help with meal planning. 🍳",
+          "👋 Hi! I'm your AI recipe assistant, RecipeWhisper. Just tell me what dish you want (e.g., 'spaghetti bolognese', 'chocolate chip cookies'), and I'll instantly create a complete recipe for you!\n\nYou can also ask me for cooking tips, meal suggestions, or help with meal planning. 🍳",
       isUser: false,
     );
     state = state.copyWith(messages: [welcomeMessage]);

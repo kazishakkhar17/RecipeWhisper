@@ -425,7 +425,9 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[800]
+                    : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
               ),
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -443,7 +445,14 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('🤔 ${context.tr('ai_thinking')}'),
+                  Text(
+                    '🤔 ${context.tr('ai_thinking')}',
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -489,6 +498,11 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                     child: TextField(
                       controller: _messageController,
                       focusNode: _focusNode,
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
                       decoration: InputDecoration(
                         hintText: context.tr('type_message'),
                         border: OutlineInputBorder(
@@ -497,7 +511,9 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         filled: true,
-                        fillColor: Colors.grey[50],
+                        fillColor: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[800]
+                            : Colors.grey[50],
                       ),
                       maxLines: null,
                       textInputAction: TextInputAction.send,
@@ -536,6 +552,7 @@ class _ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -549,7 +566,9 @@ class _ChatBubble extends StatelessWidget {
               ? const LinearGradient(
                   colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)])
               : null,
-          color: isUser ? null : Colors.grey[200],
+          color: isUser 
+              ? null 
+              : (isDark ? Colors.grey[800] : Colors.grey[200]),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -565,7 +584,9 @@ class _ChatBubble extends StatelessWidget {
         ),
         child: Text(message.text,
             style: TextStyle(
-                color: isUser ? Colors.white : Colors.black87,
+                color: isUser 
+                    ? Colors.white 
+                    : (isDark ? Colors.white : Colors.black87),
                 fontSize: 15,
                 height: 1.4)),
       ),
