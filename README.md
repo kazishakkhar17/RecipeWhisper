@@ -22,7 +22,7 @@ samples, guidance on mobile development, and a full API reference.
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.0+-02569B?logo=flutter)](https://flutter.dev)
 [![Firebase](https://img.shields.io/badge/Firebase-Enabled-FFCA28?logo=firebase)](https://firebase.google.com)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<!-- [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) -->
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-blue)](https://flutter.dev)
 
 Recipe Whisper is a cross-platform mobile application that transforms your cooking experience with AI-powered recipe generation, smart timers, calorie tracking, and personalized meal management.
@@ -400,7 +400,7 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## 📄 License
+<!-- ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -472,3 +472,4 @@ Made with ❤️ by Recipe Whisper Team
 [Website](https://recipewhisper.com) • [Twitter](https://twitter.com/recipewhisper) • [Instagram](https://instagram.com/recipewhisper)
 
 </div>
+-->
