@@ -170,7 +170,7 @@ class _AiSuggestionScreenState extends ConsumerState<AiSuggestionScreen> {
                   ),
                   const SizedBox(height: 15),
                   _buildSuggestionCard(
-                    icon: '🥗',
+                    icon: '🥑',
                     title: context.tr('low_carb_dinner'),
                     description: context.tr('low_carb_dinner_desc'),
                     onTap: () => _startConversation('Suggest low-carb dinner ideas'),
