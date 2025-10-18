@@ -19,46 +19,52 @@ import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/recipes/domain/entities/recipe.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
+// IMPORT THE ADAPTERS FROM diet_widget.dart
+import 'features/auth/presentation/widgets/diet_widget.dart' show GenderAdapter, ActivityLevelAdapter, CalorieEntryAdapter;
+
 /// Global key for showing SnackBars globally (especially on web)
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+/// Shared Preferences provider (to be overridden in main)
+final sharedPreferencesProvider = Provider<SharedPreferences>(
+  (ref) => throw UnimplementedError(
+    'sharedPreferencesProvider not overridden. Make sure it is overridden in main.dart',
+  ),
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase only on supported platforms
-  if (!kIsWeb && defaultTargetPlatform != TargetPlatform.linux) {
+  // ✅ Load environment variables safely from assets
+  try {
+    await dotenv.load(fileName: 'assets/.env');
+  } catch (e) {
+    debugPrint("⚠️ .env file not found — continuing without it");
+  }
+
+  // ✅ Initialize Firebase once
+  try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-  } else if (kIsWeb || defaultTargetPlatform == TargetPlatform.linux) {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } catch (e) {
-      // Firebase initialization failed on Linux, continue without it
-      print('Firebase initialization skipped on Linux: $e');
-    }
+  } catch (e) {
+    debugPrint("⚠️ Firebase init failed: $e");
   }
-  // ✅ Load environment variables (.env)
-  await dotenv.load(fileName: '.env');
-
-  // ✅ Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   // ✅ Initialize Hive
   await Hive.initFlutter();
+  
+  // 🆕 REGISTER ADAPTERS - ADD THESE THREE LINES
+  Hive.registerAdapter(GenderAdapter());
+  Hive.registerAdapter(ActivityLevelAdapter());
+  Hive.registerAdapter(CalorieEntryAdapter());
+  
   Hive.registerAdapter(RecipeAdapter());
-
-  // ✅ Open Hive boxes
   await Hive.openBox<Recipe>('recipesBox');
   await Hive.openBox('nutritionBox');
 
   // ✅ Platform-specific notification setup
   if (!kIsWeb) {
-    // Mobile - Awesome Notifications
     await AwesomeNotifications().initialize(
       null,
       [
@@ -75,13 +81,11 @@ void main() async {
       ],
     );
 
-    // Ask user for permission
     final isAllowed = await AwesomeNotifications().isNotificationAllowed();
     if (!isAllowed) {
       await AwesomeNotifications().requestPermissionToSendNotifications();
     }
   } else {
-    // Web notifications
     await NotificationHelper.requestPermission();
   }
 
@@ -106,10 +110,3 @@ void main() async {
     ),
   );
 }
-
-/// ✅ Shared Preferences provider (overridden above)
-final sharedPreferencesProvider = Provider<SharedPreferences>(
-  (ref) => throw UnimplementedError(
-    'sharedPreferencesProvider not overridden. Make sure it is overridden in main.dart',
-  ),
-);
