@@ -23,7 +23,7 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       ingredients: (fields[3] as List).cast<String>(),
       instructions: (fields[4] as List).cast<String>(),
       cookingTimeMinutes: fields[5] as int,
-      servings: fields[6] as int,
+      calories: fields[6] as int,
       category: fields[7] as String,
       imageUrl: fields[8] as String?,
       createdAt: fields[9] as DateTime,
@@ -48,7 +48,7 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       ..writeByte(5)
       ..write(obj.cookingTimeMinutes)
       ..writeByte(6)
-      ..write(obj.servings)
+      ..write(obj.calories)
       ..writeByte(7)
       ..write(obj.category)
       ..writeByte(8)

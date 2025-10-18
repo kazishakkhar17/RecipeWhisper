@@ -23,7 +23,7 @@ class Recipe {
   final int cookingTimeMinutes;
 
   @HiveField(6)
-  final int servings;
+  final int calories;
 
   @HiveField(7)
   final String category;
@@ -44,7 +44,7 @@ class Recipe {
     required this.ingredients,
     required this.instructions,
     required this.cookingTimeMinutes,
-    required this.servings,
+    required this.calories,
     this.category = 'Other',
     this.imageUrl,
     required this.createdAt,
@@ -58,7 +58,7 @@ class Recipe {
     required List<String> ingredients,
     required List<String> instructions,
     required int cookingTimeMinutes,
-    required int servings,
+    required int calories,
     String category = 'Other',
     String? imageUrl,
   }) {
@@ -69,7 +69,7 @@ class Recipe {
       ingredients: ingredients,
       instructions: instructions,
       cookingTimeMinutes: cookingTimeMinutes,
-      servings: servings,
+      calories: calories,
       category: category,
       imageUrl: imageUrl,
       createdAt: DateTime.now(),
@@ -84,7 +84,7 @@ class Recipe {
     List<String>? ingredients,
     List<String>? instructions,
     int? cookingTimeMinutes,
-    int? servings,
+    int? calories,
     String? category,
     String? imageUrl,
     DateTime? createdAt,
@@ -97,7 +97,7 @@ class Recipe {
       ingredients: ingredients ?? this.ingredients,
       instructions: instructions ?? this.instructions,
       cookingTimeMinutes: cookingTimeMinutes ?? this.cookingTimeMinutes,
-      servings: servings ?? this.servings,
+      calories: calories ?? this.calories,
       category: category ?? this.category,
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
@@ -114,7 +114,7 @@ class Recipe {
       'ingredients': ingredients,
       'instructions': instructions,
       'cookingTimeMinutes': cookingTimeMinutes,
-      'servings': servings,
+      'calories': calories,
       'category': category,
       'imageUrl': imageUrl,
       'createdAt': createdAt.toIso8601String(),
@@ -131,7 +131,7 @@ class Recipe {
       ingredients: List<String>.from(map['ingredients']),
       instructions: List<String>.from(map['instructions']),
       cookingTimeMinutes: map['cookingTimeMinutes'],
-      servings: map['servings'],
+      calories: map['calories'],
       category: map['category'] ?? 'Other',
       imageUrl: map['imageUrl'],
       createdAt: DateTime.parse(map['createdAt']),
@@ -141,7 +141,7 @@ class Recipe {
 
   @override
   String toString() {
-    return 'Recipe(id: $id, name: $name, servings: $servings, time: ${cookingTimeMinutes}min)';
+    return 'Recipe(id: $id, name: $name, calories: $calories, time: ${cookingTimeMinutes}min)';
   }
 
   @override

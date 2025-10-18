@@ -1,145 +1,233 @@
-import 'package:bli_flutter_recipewhisper/core/services/localization_service.dart';
-import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
+// profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bli_flutter_recipewhisper/core/theme/theme_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:bli_flutter_recipewhisper/core/localization/app_localizations.dart';
 
-class ProfileScreen extends ConsumerWidget {
+import '../widgets/diet_widget.dart';
+import '../widgets/settings_widget.dart';
+
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
-    final isEnglish = ref.watch(localeProvider).languageCode == 'en';
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  late Box _profileBox;
+  bool _isInitialized = false;
+
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+
+  bool _showProfileDetails = false;
+  bool _showDietDetails = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeHive();
+  }
+
+  Future<void> _initializeHive() async {
+    _profileBox = await Hive.openBox('user_profile_box');
+
+    _firstNameController.text = _profileBox.get('firstName', defaultValue: '');
+    _lastNameController.text = _profileBox.get('lastName', defaultValue: '');
+
+    setState(() => _isInitialized = true);
+  }
+
+  void _saveProfileData() {
+    _profileBox.put('firstName', _firstNameController.text);
+    _profileBox.put('lastName', _lastNameController.text);
+    setState(() {});
+  }
+
+  String _getDisplayName() {
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+
+    if (firstName.isNotEmpty && lastName.isNotEmpty) return '$firstName $lastName';
+    if (firstName.isNotEmpty) return firstName;
+    if (lastName.isNotEmpty) return lastName;
+
+    final user = _auth.currentUser;
+    return user?.displayName ?? context.tr('user');
+  }
+
+  String _getInitials() {
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+
+    if (firstName.isNotEmpty && lastName.isNotEmpty) return '${firstName[0]}${lastName[0]}'.toUpperCase();
+    if (firstName.isNotEmpty) return firstName[0].toUpperCase();
+    if (lastName.isNotEmpty) return lastName[0].toUpperCase();
+
+    final user = _auth.currentUser;
+    return user?.email?[0].toUpperCase() ?? '👤';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = _auth.currentUser;
+
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('profile')),
-        automaticallyImplyLeading: false,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      appBar: AppBar(title: Text(context.tr('profile'))),
+      body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              context.tr('settings'),
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
-
-            // Dark Theme Toggle
-            Container(
+            // Profile Card
+            Padding(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _showProfileDetails = !_showProfileDetails;
+                  if (_showProfileDetails) _showDietDetails = false;
+                }),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
                   ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+                  child: Column(
                     children: [
-                      Icon(
-                        isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                        color: Theme.of(context).colorScheme.primary,
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        child: Text(
+                          _getInitials(),
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFFF6B6B)),
+                        ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(height: 12),
                       Text(
-                        context.tr('dark_theme'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                        _getDisplayName(),
+                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(user?.email ?? context.tr('no_email'), style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_showProfileDetails ? context.tr('hide_details') : context.tr('view_profile'),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                            const SizedBox(width: 6),
+                            Icon(
+                              _showProfileDetails ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  Switch(
-                    value: isDarkMode,
-                    onChanged: (_) => ref.read(themeProvider.notifier).toggleTheme(),
-                    activeColor: const Color(0xFFFF6B6B),
-                  ),
-                ],
+                ),
               ),
             ),
+
+            // Profile Details
+            if (_showProfileDetails)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(context.tr('personal_information'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _firstNameController,
+                          decoration: InputDecoration(
+                            labelText: context.tr('first_name'), 
+                            prefixIcon: const Icon(Icons.person_outline, size: 20), 
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
+                          ),
+                          onChanged: (_) => _saveProfileData(),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _lastNameController,
+                          decoration: InputDecoration(
+                            labelText: context.tr('last_name'), 
+                            prefixIcon: const Icon(Icons.person_outline, size: 20), 
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
+                          ),
+                          onChanged: (_) => _saveProfileData(),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          enabled: false,
+                          controller: TextEditingController(text: user?.email ?? context.tr('no_email')),
+                          decoration: InputDecoration(
+                            labelText: context.tr('email'), 
+                            prefixIcon: const Icon(Icons.email_outlined, size: 20), 
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
             const SizedBox(height: 16),
 
-            // Language Toggle
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.language,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        context.tr('english_language'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: isEnglish,
-                    onChanged: (_) => ref.read(localeProvider.notifier).toggleLocale(),
-                    activeColor: const Color(0xFFFF6B6B),
-                  ),
-                ],
-              ),
-            ),
+            // Diet Widget Preview
+// Diet Widget Preview
+// Diet Widget Preview
+const Padding(
+  padding: EdgeInsets.symmetric(horizontal: 16),
+  child: DietWidget(),
+),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 16),
 
-            // Current language display
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: Text(
-                  ref.read(localeProvider.notifier).currentLanguageName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
+            // Settings
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: SettingsWidget()),
+
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    super.dispose();
   }
 }

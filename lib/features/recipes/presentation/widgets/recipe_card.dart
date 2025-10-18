@@ -127,8 +127,8 @@ class RecipeCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       _buildInfoChip(
                         context,
-                        Icons.restaurant_outlined,
-                        '${recipe.servings} ${context.tr('servings')}',
+                        Icons.local_fire_department_outlined,
+                        '${recipe.calories} ${context.tr('calories')}',
                       ),
                     ],
                   ),
